@@ -58,8 +58,14 @@ const {serve,open}=require('../../upstream/test/helpers/phase3-fixture.cjs');
      effects: [...document.querySelectorAll('#chatMatchNav > .btn')].map(el=>({id:el.id,transform:getComputedStyle(el).transform,face:getComputedStyle(el.querySelector('.control-glass-surface')).backgroundImage}))
     }));
     console.log('NAV-LENS-DIAGNOSTIC '+viewport.width+' '+JSON.stringify(diag));
+    const stableSlot=await page.locator('.chat-match-slot').evaluate(el=>({transform:getComputedStyle(el).transform,transition:getComputedStyle(el).transitionDuration}));
+    assert.equal(stableSlot.transform,'none','expanded slot must not slide its entire capsule');
+    assert.equal(stableSlot.transition,'0s','expanded slot must not animate as a group');
+    await page.waitForFunction(()=>document.querySelector('#chatMatchNext')?.dataset.controlOptics==='engine',{},{timeout:8000});
+    assert.equal(await page.locator('#chatMatchPrev').getAttribute('data-control-optics'),'engine','up arrow has its own Meapri lens');
+    assert.equal(await page.locator('#chatMatchNext').getAttribute('data-control-optics'),'engine','down arrow has its own Meapri lens');
     const position=await page.locator('#chatMatchNav').boundingBox();
-    await page.locator('#chatMatchPrev').hover();
+    await page.locator('#chatMatchNext').hover();
     await page.waitForTimeout(100);
     const hovered=await page.locator('#chatMatchNav').boundingBox();
     for(const prop of ['x','y','width','height'])
