@@ -75,6 +75,25 @@ jobs:
           node --check _site/preview-chat.js
           grep -q "preview-chat.js?v=preview-20261110" _site/index.html
 
+
+      - name: Install isolated browser test tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd preview
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+
+      - name: Test preview chat on desktop and mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          node preview/test/preview-chat.browser.cjs
+          cp _site/index.html _site/preview-chat.js upstream/
+          NODE_PATH="$PWD/preview/node_modules" node upstream/test/conversation-send-focus.browser.cjs
+          NODE_PATH="$PWD/preview/node_modules" node upstream/test/reply-anchor-context.browser.cjs
+          NODE_PATH="$PWD/preview/node_modules" node upstream/test/reply-start-top.browser.cjs
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
