@@ -32,16 +32,18 @@ function create(el,relative){
 function schedule(){if(!frame&&!leaving)frame=requestAnimationFrame(sync);}
 function opticalSettings(item){
  const {el,drop,rail}=item;
- const strength=rail ? .85 : el.id==='scrollTopBtn' ? .35 : drop ? .65 : .55;
+ const reply=el.matches('#chatMatchPrev,#chatMatchNext');
+ // Two separate small Meapri lenses, not one lens on the surrounding pill.
+ const strength=rail ? .85 : reply ? 1.05 : el.id==='scrollTopBtn' ? .35 : drop ? .65 : .55;
  const menu=el.matches('.rail-pointer-light,.glowme-nav button');
- const brightness=menu?Math.min(.025,settings.opacity/100):settings.opacity/100;
+ const brightness=menu?Math.min(.025,settings.opacity/100):reply?Math.min(.16,settings.opacity/180):settings.opacity/100;
  return {
   thickness:menu?Math.min(8,settings.thickness):settings.thickness,refraction:menu?settings.refraction*.35:settings.refraction*strength,
   blur:menu?0:settings.blur,saturation:menu?100:settings.saturation,
-  tint:menu?'rgba(255,255,255,'+brightness+')':drop?'rgba(193,239,222,'+brightness+')':el.classList.contains('glass-on-image')?'rgba(14,37,30,'+brightness+')':'rgba(255,255,255,'+brightness+')',
-  // A clear moving lens bends the menu glyphs and retains a quiet optical rim;
-  // the gloss preference adds to this baseline.
-  specular:menu||settings.specular>0,specularIntensity:menu?.10+settings.specular/400:settings.specular/100
+  tint:menu?'rgba(255,255,255,'+brightness+')':reply?'rgba(239,255,248,'+brightness+')':drop?'rgba(193,239,222,'+brightness+')':el.classList.contains('glass-on-image')?'rgba(14,37,30,'+brightness+')':'rgba(255,255,255,'+brightness+')',
+  // The reply arrows retain a small baseline real SDK specular highlight even
+  // when the global gloss preference is zero; the outer shell remains static.
+  specular:menu||reply||settings.specular>0,specularIntensity:reply?Math.max(.24,settings.specular/100):menu?.10+settings.specular/400:settings.specular/100
  };
 }
 function sync(){
