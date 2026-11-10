@@ -48,6 +48,16 @@ const {serve,open}=require('../../upstream/test/helpers/phase3-fixture.cjs');
     assert.equal(await page.locator('#chatMatchNav > .control-glass-surface').count(),0,'outer pill has no glass face');
     assert.equal(await page.locator('#chatMatchPrev > .control-glass-surface').count(),1,'up arrow owns a separate glass face');
     assert.equal(await page.locator('#chatMatchNext > .control-glass-surface').count(),1,'down arrow owns a separate glass face');
+    const diag=await page.evaluate(()=>({
+     settings:window.FrommGlassSettings?.value,
+     optics:window.FrommControlGlass?.snapshot,
+     nav:document.querySelector('#chatMatchNav')?.getAttribute('data-control-optics'),
+     up:document.querySelector('#chatMatchPrev')?.getAttribute('data-control-optics'),
+     down:document.querySelector('#chatMatchNext')?.getAttribute('data-control-optics'),
+     slot:getComputedStyle(document.querySelector('.chat-match-slot')).transform,
+     effects: [...document.querySelectorAll('#chatMatchNav > .btn')].map(el=>({id:el.id,transform:getComputedStyle(el).transform,face:getComputedStyle(el.querySelector('.control-glass-surface')).backgroundImage}))
+    }));
+    console.log('NAV-LENS-DIAGNOSTIC '+viewport.width+' '+JSON.stringify(diag));
     const position=await page.locator('#chatMatchNav').boundingBox();
     await page.locator('#chatMatchPrev').hover();
     await page.waitForTimeout(100);
