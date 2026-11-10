@@ -17,6 +17,7 @@ const {serve,open}=require('../../upstream/test/helpers/phase3-fixture.cjs');
     const messages=Array.from({length:1800},(_,i)=>({
      messageId:'m'+i,userType:'star',type:'text',content:'합성 대화 '+i,createdAt:base+i*1000
     }));
+    messages[200].userType='fan';messages[200].userId='synthetic-fan';
     messages[1700].embeddedMentionedMessage='원문으로 이동 테스트';
     messages[1700].mentionedMessage={messageId:'m200',userId:'synthetic-fan',content:'원문으로 이동 테스트'};
     messages[1701].embeddedMentionedMessage='ID 없는 인용';
