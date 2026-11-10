@@ -53,7 +53,11 @@ jobs:
           source = html.read_text(encoding="utf-8")
           old = "<title>Fromm Viewer</title>"
           assert old in source, "Expected title missing from baseline"
-          html.write_text(source.replace(old, "<title>Fromm Viewer · 실험용</title>", 1), encoding="utf-8")
+          source = source.replace(old, "<title>Fromm Viewer · 실험용</title>", 1)
+          needle = "</body>"
+          assert needle in source, "Expected HTML body close missing"
+          source = source.replace(needle, '<script src="preview-chat.js?v=preview-20261110"></script>\\n' + needle, 1)
+          html.write_text(source, encoding="utf-8")
           manifest_path = Path("_site/manifest.webmanifest")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           manifest["name"] = "Fromm Viewer 실험용"
@@ -68,6 +72,8 @@ jobs:
           test -f _site/assets/glowme/favicon-32.png
           node --check _site/web-conversation.js
           node --check _site/web-conversation-core.js
+          node --check _site/preview-chat.js
+          grep -q "preview-chat.js?v=preview-20261110" _site/index.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
