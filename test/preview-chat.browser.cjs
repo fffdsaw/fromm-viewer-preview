@@ -32,6 +32,7 @@ const {serve,open}=require('../../upstream/test/helpers/phase3-fixture.cjs');
    assert.equal(await targetQuote.locator('.reply-label').textContent(),'↳ 나','my author label');
    await targetQuote.click();
    await page.waitForFunction(()=>!!document.querySelector('.msg[data-message-id="m200"].reply-target-flash'));
+   await page.waitForTimeout(280); // Let the bounded anchor settle after virtual rows lay out.
    const position=await page.locator('.msg[data-message-id="m200"]').evaluate(el=>{
     const r=el.getBoundingClientRect();
     return{top:r.top,bottom:r.bottom};
