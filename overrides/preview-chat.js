@@ -126,10 +126,9 @@ scrollToOriginalMessage=async function(messageId){
  if(!targetId){notify('원문의 식별 정보가 없어 이동할 수 없습니다.');return false;}
  const generation=state.scanGeneration;
  window.FrommViewState?.cancel();
- state.onlyMyReplies=false;state.chatQuery='';state.chatMatchKey='';
- const search=document.getElementById('chatSearchInput');
- if(search)search.value='';
- syncMyReplyTools();
+ // Keep the active personal-reply/search navigation and its selected result while
+ // visiting a quoted original. The full-history list is still rendered below.
+ // Clearing these flags caused the ↑ count ↓ capsule to disappear.
  if(state.filter!=='all')await setFilter('all',{autoTop:false});
  const loaded=await ensureFullChatHistory();
  if(generation!==state.scanGeneration)return false;
@@ -241,13 +240,31 @@ async function pollOnce(){
 }
 const styles=document.createElement('style');
 styles.textContent=[
- '.room{display:flex;align-items:center;justify-content:space-between;gap:8px}',
- '.preview-unread-badge{display:inline-grid;place-items:center;flex-shrink:0;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:#359e86;color:#fff;font:700 11px/1 system-ui;box-sizing:border-box;box-shadow:0 1px 4px #16534425}',
+ '#rooms .room{display:flex;align-items:center;justify-content:flex-start;gap:10px}',
+ 'html.glowme-phase3 #sidebar .rail-artists>strong{display:none!important}',
+ '@media(min-width:701px) and (hover:hover) and (pointer:fine){html.glowme-phase3 .rail-head,html.glowme-phase3.sidebar-open .rail-head{height:44px;flex:0 0 44px;margin-bottom:0}}',
+ 'html.glowme-phase3.sidebar-open #rooms .room{padding-right:46px}',
+ 'html.glowme-phase3.sidebar-open #rooms .room .rail-artist-name{min-width:0;margin:0;flex:1 1 auto}',
+ '#rooms .room .preview-unread-badge{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:999px;background:#f4511e;color:#fff;font:700 11px/1 system-ui;box-sizing:border-box;box-shadow:0 1px 4px #8f270c30;pointer-events:none}',
+ 'html.glowme-phase3:not(.sidebar-open) #rooms .room .preview-unread-badge{top:3px;left:32px;right:auto;transform:none;min-width:11px;width:11px;height:11px;padding:0;border:2px solid #f3fbf7;font-size:0;line-height:0;box-shadow:0 1px 3px #8f270c25}',
+ '@media(max-width:700px){html.glowme-phase3:not(.sidebar-open) #rooms .room .preview-unread-badge{left:30px;top:3px}}',
  '.reply-quote.preview-quote{display:flex;align-items:flex-start;gap:8px;border-left:3px solid #62b9a7;background:#e4f2edbf;padding:9px 11px;outline-offset:2px}',
  '.preview-quote .reply-label{flex:0 0 auto;white-space:nowrap;font-size:12px;font-weight:750;color:#397e70;margin:0}',
  '.preview-quote .reply-content{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;-webkit-line-clamp:unset;color:#355c52;font-size:12px}',
- '.reply-quote.preview-quote-mine{border-left-color:#55bca4}',
- '.reply-quote.preview-quote-fan{border-left-color:#8ca9c9}',
+ '.reply-quote.preview-quote-mine{border-left-color:#ff8fa8;background:#fff0f4ed}',
+ '.reply-quote.preview-quote-mine .reply-label{color:#b53f66}',
+ '.reply-quote.preview-quote-fan{border-left-color:#56b7a2;background:#e4f3ed}',
+ '.reply-quote.preview-quote-fan .reply-label{color:#2e8271}',
+ 'html.glowme-phase3 .chat-match-slot #chatMatchNav,html.glowme-phase3 #chatToolsPanel #chatMatchNav{position:relative;isolation:isolate;min-height:52px;display:flex;align-items:center;justify-content:center;padding:4px;gap:5px;border-radius:999px;border:1px solid #ffffffd9;background:linear-gradient(145deg,#f8fffbeb,#cdebded8);box-shadow:inset 0 1px 2px #fff,0 5px 17px #24544122;overflow:visible}',
+ 'html.glowme-phase3 #chatMatchNav[hidden],html.glowme-phase3 .chat-match-slot #chatMatchNav[hidden]{display:none!important}',
+ 'html.glowme-phase3 #chatMatchNav .btn{position:relative;z-index:1;width:42px;height:42px;min-width:42px;min-height:42px;display:grid;place-items:center;padding:0;border:1px solid #ffffffc9;border-radius:50%;background:#ffffff92;color:#367e6e;font-size:19px;line-height:1;box-shadow:inset 0 1px 1px #fff,0 1px 5px #3d7c6520;transition:background 160ms ease,box-shadow 160ms ease,transform 160ms ease}',
+ 'html.glowme-phase3 #chatMatchNav .btn:hover:not(:disabled){background:#f8fffcdf;box-shadow:inset 0 1px 2px #fff,0 2px 8px #41826e40;transform:translateY(-1px)}',
+ 'html.glowme-phase3 #chatMatchNav .btn:active:not(:disabled){transform:scale(.95)}',
+ 'html.glowme-phase3 #chatMatchNav .btn:disabled{opacity:.44;cursor:default}',
+ 'html.glowme-phase3 #chatMatchPosition{min-width:49px;text-align:center;font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;color:#325e53}',
+ 'html.glowme-phase3 #chatMatchNav.glass-control>.control-glass-surface{border-radius:inherit}',
+ '@media(prefers-reduced-motion:reduce){html.glowme-phase3 #chatMatchNav .btn{transition:none}html.glowme-phase3 #chatMatchNav .btn:hover:not(:disabled),html.glowme-phase3 #chatMatchNav .btn:active:not(:disabled){transform:none}}',
+ '@media(prefers-reduced-transparency:reduce),(forced-colors:active){html.glowme-phase3 .chat-match-slot #chatMatchNav,html.glowme-phase3 #chatToolsPanel #chatMatchNav{background:#e5f6eb}}',
  '#previewChatNotice{position:fixed;left:50%;bottom:calc(var(--conversation-height,50px) + var(--conversation-keyboard,0px) + 30px);transform:translateX(-50%);max-width:min(90vw,460px);background:#173d35ee;color:white;padding:10px 14px;border-radius:12px;font:13px/1.4 system-ui;z-index:1000;box-shadow:0 5px 24px #143b3140}',
  'body.conversation-open .main{padding-bottom:calc(var(--conversation-height,50px) + var(--conversation-keyboard,0px) + 18px)}',
  'body.conversation-open #scrollTopBtn{bottom:calc(var(--conversation-height,50px) + var(--conversation-keyboard,0px) + 18px)}',
