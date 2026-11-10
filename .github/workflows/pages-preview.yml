@@ -56,7 +56,7 @@ jobs:
           source = source.replace(old, "<title>Fromm Viewer · 실험용</title>", 1)
           needle = "</body>"
           assert needle in source, "Expected HTML body close missing"
-          source = source.replace(needle, '<script src="preview-chat.js?v=preview-20261110"></script>\\n' + needle, 1)
+          source = source.replace(needle, '<script src="preview-chat.js?v=preview-20261110"></script>' + chr(10) + needle, 1)
           html.write_text(source, encoding="utf-8")
           manifest_path = Path("_site/manifest.webmanifest")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
