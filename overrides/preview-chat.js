@@ -155,8 +155,8 @@ scrollToOriginalMessage=async function(messageId){
 };
 function visibleLatest(){
  if(document.hidden||state.filter!=='all'||state.chatAutoTopPending||!state.chatHistoryComplete)return false;
+ if(!document.getElementById('loginGate')?.classList.contains('hidden'))return false;
  const dock=document.getElementById('conversationDock');
- if(!dock||dock.hidden)return false;
  const rows=document.querySelectorAll('#timeline .msg');
  const last=rows[rows.length-1],list=state.infiniteList||[];
  if(!last||!list.length||state.infiniteRendered<list.length||last.dataset.messageId!==messageStableKey(list[list.length-1]))return false;
