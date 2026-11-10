@@ -1,0 +1,82 @@
+name: Deploy Fromm Viewer Preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: fromm-viewer-preview-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy independent preview
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout pinned public Fromm Viewer baseline
+        uses: actions/checkout@v4
+        with:
+          repository: fffdsaw/fromm-viewer
+          ref: e8c57b137d43e8d16e43ba2cb11db6a5f71636bc
+          persist-credentials: false
+          path: upstream
+
+      - name: Checkout experimental overlay
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: preview
+
+      - name: Assemble isolated public site
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp upstream/index.html upstream/*.js upstream/*.css upstream/*.webmanifest upstream/.nojekyll _site/
+          cp -a upstream/assets upstream/vendor _site/
+          if test -d preview/overrides; then
+            cp -a preview/overrides/. _site/
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          html = Path("_site/index.html")
+          source = html.read_text(encoding="utf-8")
+          old = "<title>Fromm Viewer</title>"
+          assert old in source, "Expected title missing from baseline"
+          html.write_text(source.replace(old, "<title>Fromm Viewer · 실험용</title>", 1), encoding="utf-8")
+          manifest_path = Path("_site/manifest.webmanifest")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["name"] = "Fromm Viewer 실험용"
+          manifest["short_name"] = "Fromm 실험용"
+          manifest["id"] = "./preview"
+          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+          test -f _site/index.html
+          test -f _site/web-conversation.js
+          test -f _site/conversation.css
+          test -f _site/vendor/firebase/conversation-10.12.2.js
+          test -f _site/assets/glowme/favicon-32.png
+          node --check _site/web-conversation.js
+          node --check _site/web-conversation-core.js
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload preview artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy preview
+        id: deployment
+        uses: actions/deploy-pages@v4
