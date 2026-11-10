@@ -54,6 +54,9 @@ jobs:
           old = "<title>Fromm Viewer</title>"
           assert old in source, "Expected title missing from baseline"
           source = source.replace(old, "<title>Fromm Viewer · 실험용</title>", 1)
+          charset = '<meta charset="utf-8" />'
+          assert charset in source, "Expected UTF-8 head marker missing"
+          source = source.replace(charset, charset + chr(10) + '<script src="preview-storage.js?v=1"></script>', 1)
           needle = "</body>"
           assert needle in source, "Expected HTML body close missing"
           source = source.replace(needle, '<script src="preview-chat.js?v=preview-20261110"></script>' + chr(10) + needle, 1)
@@ -62,7 +65,20 @@ jobs:
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           manifest["name"] = "Fromm Viewer 실험용"
           manifest["short_name"] = "Fromm 실험용"
-          manifest["id"] = "./preview"
+          manifest["id"] = "/fromm-viewer-preview/"
+          manifest["start_url"] = "/fromm-viewer-preview/"
+          manifest["scope"] = "/fromm-viewer-preview/"
+          core_path = Path("_site/web-conversation-core.js")
+          core = core_path.read_text(encoding="utf-8")
+          assert "name='fromm-conversations-v1'" in core, "Conversation store schema moved"
+          core_path.write_text(core.replace("name='fromm-conversations-v1'", "name='fromm-preview-conversations-v1'", 1), encoding="utf-8")
+          conversation_path = Path("_site/web-conversation.js")
+          conversation = conversation_path.read_text(encoding="utf-8")
+          assert "event.key===epochKey(c.storageAccount,c.host)" in conversation
+          assert "event.key===storageKey(c.storageAccount)" in conversation
+          conversation = conversation.replace("event.key===epochKey(c.storageAccount,c.host)", "event.key==='fromm.preview.v1::'+epochKey(c.storageAccount,c.host)", 1)
+          conversation = conversation.replace("event.key===storageKey(c.storageAccount)", "event.key==='fromm.preview.v1::'+storageKey(c.storageAccount)", 1)
+          conversation_path.write_text(conversation, encoding="utf-8")
           manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           PY
           test -f _site/index.html
@@ -73,6 +89,8 @@ jobs:
           node --check _site/web-conversation.js
           node --check _site/web-conversation-core.js
           node --check _site/preview-chat.js
+          node --check _site/preview-storage.js
+          grep -q "fromm-preview-conversations-v1" _site/web-conversation-core.js
           grep -q "preview-chat.js?v=preview-20261110" _site/index.html
 
 
