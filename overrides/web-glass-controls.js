@@ -2,7 +2,8 @@
  * Only decorative faces flex: native controls, hit boxes and handlers stay put.
  * MIT upstream is preserved in vendor/meapri/LICENSE. */
 import {glassPC,glassPreferences} from './web-glass-settings.js?v=rail-lens-20261108';
-const controls='#chatMatchNav,.card-download,.replay-download,.chat-media-download,.replay-play,#chatToolsBtn,#scanBtn,#logoutMiniBtn,#channelRefresh,#scrollTopBtn,#sortBtn,#selectAllBtn,#clearSelectionBtn,.replay-filter,.live-mini-btn,.replay-page-back,.replay-page-download,#glassSettingsBtn,.glass-switch-thumb';
+// Two independent navigation lenses; the enclosing pill stays completely stationary.
+const controls='#chatMatchPrev,#chatMatchNext,.card-download,.replay-download,.chat-media-download,.replay-play,#chatToolsBtn,#scanBtn,#logoutMiniBtn,#channelRefresh,#scrollTopBtn,#sortBtn,#selectAllBtn,#clearSelectionBtn,.replay-filter,.live-mini-btn,.replay-page-back,.replay-page-download,#glassSettingsBtn,.glass-switch-thumb';
 const selected='.glowme-nav button[aria-current="page"],#rooms .room.active,.replay-filter.active';
 const motion=matchMedia('(prefers-reduced-motion: reduce)'),opaque=matchMedia('(prefers-reduced-transparency: reduce)'),contrast=matchMedia('(forced-colors: active)');
 const faces=new Map(),inView=new Set(),watched=new Set(),failed=new WeakSet();
@@ -59,7 +60,7 @@ function sync(){
   candidates.unshift(pointer);
  }
  // Selected and interacted controls win the bounded map budget.
- const priority=el=>el===active||el===document.activeElement?100:el.matches('.glass-switch-thumb')?90:el.matches(selected)||el===pointer?80:el.id==='chatMatchNav'?70:el.id==='scrollTopBtn'?50:0;
+ const priority=el=>el===active||el===document.activeElement?100:el.matches('.glass-switch-thumb')?90:el.matches(selected)||el===pointer?80:(el.id==='chatMatchPrev'||el.id==='chatMatchNext')?70:el.id==='scrollTopBtn'?50:0;
  candidates.sort((a,b)=>priority(b)-priority(a));
  const targets=candidates,engineTargets=candidates.filter(el=>priority(el)>0).slice(0,LIMIT),useEngine=optics();
  // Batch reads before adding faces; reading computed position after each
