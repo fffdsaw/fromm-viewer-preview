@@ -37,6 +37,24 @@ const {serve,open}=require('../../upstream/test/helpers/phase3-fixture.cjs');
    await targetQuote.scrollIntoViewIfNeeded();
    assert.equal(await targetQuote.locator('.reply-label').textContent(),'↳ 나','my author label');
    await page.waitForFunction(()=>!document.querySelector('#chatMatchNav').hidden);
+   // The stationary outer capsule is never an engine target. Each arrow owns
+   // an individual surface and hit box (PC only; mobile retains lightweight CSS).
+   if(viewport.width>700){
+    await page.waitForFunction(()=>{
+     const up=document.querySelector('#chatMatchPrev'),down=document.querySelector('#chatMatchNext');
+     return up?.classList.contains('glass-control')&&down?.classList.contains('glass-control');
+    },null,{timeout:8000});
+    assert.equal(await page.locator('#chatMatchNav').evaluate(el=>el.classList.contains('glass-control')),false,'outer pill does not receive glass tilt');
+    assert.equal(await page.locator('#chatMatchNav > .control-glass-surface').count(),0,'outer pill has no glass face');
+    assert.equal(await page.locator('#chatMatchPrev > .control-glass-surface').count(),1,'up arrow owns a separate glass face');
+    assert.equal(await page.locator('#chatMatchNext > .control-glass-surface').count(),1,'down arrow owns a separate glass face');
+    const position=await page.locator('#chatMatchNav').boundingBox();
+    await page.locator('#chatMatchPrev').hover();
+    await page.waitForTimeout(100);
+    const hovered=await page.locator('#chatMatchNav').boundingBox();
+    for(const prop of ['x','y','width','height'])
+     assert.ok(Math.abs(position[prop]-hovered[prop])<=0.5,'outer pill must not move on up hover '+prop);
+   }
    assert.match(await page.locator('#chatMatchPosition').textContent(),/1\s*\/\s*2/,'two personal replies remain navigable');
    await targetQuote.click();
    await page.waitForFunction(()=>!!document.querySelector('.msg[data-message-id="m200"].reply-target-flash'));
