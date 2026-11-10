@@ -56,10 +56,12 @@ jobs:
           source = source.replace(old, "<title>Fromm Viewer · 실험용</title>", 1)
           charset = '<meta charset="utf-8" />'
           assert charset in source, "Expected UTF-8 head marker missing"
-          source = source.replace(charset, charset + chr(10) + '<script src="preview-storage.js?v=1"></script>', 1)
+          from os import environ
+          version = environ.get("GITHUB_SHA", "development")[:12]
+          source = source.replace(charset, charset + chr(10) + '<script src="preview-storage.js?v=' + version + '"></script>', 1)
           needle = "</body>"
           assert needle in source, "Expected HTML body close missing"
-          source = source.replace(needle, '<script src="preview-chat.js?v=preview-20261110"></script>' + chr(10) + needle, 1)
+          source = source.replace(needle, '<script src="preview-chat.js?v=' + version + '"></script>' + chr(10) + needle, 1)
           html.write_text(source, encoding="utf-8")
           manifest_path = Path("_site/manifest.webmanifest")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -78,6 +80,9 @@ jobs:
           assert "event.key===storageKey(c.storageAccount)" in conversation
           conversation = conversation.replace("event.key===epochKey(c.storageAccount,c.host)", "event.key==='fromm.preview.v1::'+epochKey(c.storageAccount,c.host)", 1)
           conversation = conversation.replace("event.key===storageKey(c.storageAccount)", "event.key==='fromm.preview.v1::'+storageKey(c.storageAccount)", 1)
+          old_counter = "changes.filter(m=>!oldKeys.has(messageStableKey(m))).length"
+          assert old_counter in conversation, "Expected new-message counter missing"
+          conversation = conversation.replace(old_counter, "changes.filter(m=>isArtist(m)&&!oldKeys.has(messageStableKey(m))).length", 1)
           conversation_path.write_text(conversation, encoding="utf-8")
           manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           PY
@@ -91,7 +96,7 @@ jobs:
           node --check _site/preview-chat.js
           node --check _site/preview-storage.js
           grep -q "fromm-preview-conversations-v1" _site/web-conversation-core.js
-          grep -q "preview-chat.js?v=preview-20261110" _site/index.html
+          grep -q "preview-chat.js?v=" _site/index.html
 
 
       - name: Install isolated browser test tooling
