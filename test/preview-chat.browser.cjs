@@ -27,7 +27,8 @@ const {serve,open}=require('../../upstream/test/helpers/phase3-fixture.cjs');
    const targetQuote=page.locator('.msg[data-message-id="m1700"] .reply-quote');
    await targetQuote.waitFor();
    assert.equal(await targetQuote.getAttribute('data-quoted-id'),'m200','recovered original ID from matching quote payload');
-   assert.equal(await targetQuote.locator('.reply-label').innerText(),'↳ 나','my author label');
+   await targetQuote.scrollIntoViewIfNeeded();
+   assert.equal(await targetQuote.locator('.reply-label').textContent(),'↳ 나','my author label');
    await targetQuote.click();
    await page.waitForFunction(()=>!!document.querySelector('.msg[data-message-id="m200"].reply-target-flash'));
    const position=await page.locator('.msg[data-message-id="m200"]').evaluate(el=>{
