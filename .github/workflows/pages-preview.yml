@@ -59,6 +59,16 @@ jobs:
           from os import environ
           version = environ.get("GITHUB_SHA", "development")[:12]
           source = source.replace(charset, charset + chr(10) + '<script src="preview-storage.js?v=' + version + '"></script>', 1)
+          # Main JS module and the nested import must both change URLs per deploy.
+          # Previously the hard-coded cache key reused the old full-pill engine.
+          glass_script = 'web-glass.js?v=single-glass-20261110'
+          assert glass_script in source, "Expected PC glass module script missing"
+          source = source.replace(glass_script, 'web-glass.js?v=' + version, 1)
+          glass_path = Path("_site/web-glass.js")
+          glass = glass_path.read_text(encoding="utf-8")
+          old_import = "./web-glass-controls.js?v=single-glass-20261110"
+          assert old_import in glass, "Expected glass controls module import missing"
+          glass_path.write_text(glass.replace(old_import, "./web-glass-controls.js?v=" + version, 1), encoding="utf-8")
           needle = "</body>"
           assert needle in source, "Expected HTML body close missing"
           source = source.replace(needle, '<script src="preview-chat.js?v=' + version + '"></script>' + chr(10) + needle, 1)
@@ -95,6 +105,9 @@ jobs:
           node --check _site/web-conversation-core.js
           node --check _site/preview-chat.js
           node --check _site/preview-storage.js
+          node --check _site/web-glass-controls.js
+          grep -q "web-glass.js?v=${GITHUB_SHA:0:12}" _site/index.html
+          grep -q "web-glass-controls.js?v=${GITHUB_SHA:0:12}" _site/web-glass.js
           grep -q "fromm-preview-conversations-v1" _site/web-conversation-core.js
           grep -q "preview-chat.js?v=" _site/index.html
 
