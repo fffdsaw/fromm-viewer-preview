@@ -170,7 +170,7 @@ function observe(id,rows,full=false){
  if(watermark(id)==null)saveWatermark(id,most); // First observation creates a local baseline, not retroactive unread.
  const state=observations.get(id)||{rows:[],complete:false};
  if(full||!state.complete){state.rows=rows;state.complete=!!full;}
- else if(!state.rows.length||labelTime(rows.at(-1))>labelTime(state.rows.at(-1))){state.rows=rows;}
+ else if(!state.rows.length||most>Math.max(...state.rows.slice(0,SAMPLE).map(labelTime))){state.rows=rows;}
  observations.set(id,state);
  paintBadges();
 }
@@ -178,7 +178,8 @@ function unread(id){
  const s=observations.get(id),mark=watermark(id);
  if(mark==null||!s?.rows?.length)return{count:0,capped:false};
  const count=artistRows(s.rows).filter(m=>labelTime(m)>mark).length;
- const earliest=Math.min(...s.rows.map(labelTime).filter(Boolean));
+ let earliest=Infinity;
+ if(!s.complete){for(const row of s.rows){const time=labelTime(row);if(time>0&&time<earliest)earliest=time;}}
  return{count,capped:!s.complete&&s.rows.length>=SAMPLE&&earliest>mark};
 }
 function paintBadges(){
@@ -200,7 +201,11 @@ function tick(){
  const room=state.room,id=roomId(room);
  if(id&&state.filter==='all'&&state.chatMessages?.length){
   const rows=state.chatMessages;
-  observe(id,rows,true);
+  const previous=observations.get(id);
+  if(!previous||!previous.complete||previous.rows!==rows||previous.length!==rows.length){
+   observe(id,rows,true);
+   const updated=observations.get(id);if(updated)updated.length=rows.length;
+  }
   if(visibleLatest()){
    const highest=artistRows(rows).reduce((n,m)=>Math.max(n,labelTime(m)),0);
    if(highest>0){saveWatermark(id,highest);paintBadges();}
