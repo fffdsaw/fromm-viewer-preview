@@ -41,7 +41,6 @@
   --lg-glow:0!important;
   --lg-tilt-x:0deg!important;
   --lg-tilt-y:0deg!important;
-  filter:none!important;
 }
 #timeline .chat-sound-bubble .chat-sound-download>.download-feedback-icon{
   filter:none!important;
