@@ -10,7 +10,7 @@
   text-shadow:none!important;
   filter:none!important;
   transform:none!important;
-  transition:border-color .16s ease,box-shadow .16s ease!important;
+  transition:border-color .16s ease!important;
 }
 /* Hovering changes optical refraction and specular highlights, not the solid
    body tint. In particular, never inherit the old near-black media hover. */
