@@ -45,6 +45,9 @@ const html=`<!doctype html><html class="glowme-phase3 pc-layout" lang="ko">
   // The real glass engine must be prioritized for visible voice controls, not
   // constructed only on a late mouseover.
   await page.waitForFunction(()=>document.querySelectorAll('#timeline [data-control-optics="engine"]').length===2,null,{timeout:10000});
+  // Wait until the 160ms CSS shell-to-lens transition has fully settled.
+  // Otherwise the baseline captures a fractional, in-flight box shadow.
+  await page.waitForTimeout(400);
   const state=async selector=>page.locator(selector).evaluate(el=>{
    const s=getComputedStyle(el),f=el.querySelector('.control-glass-surface'),v=getComputedStyle(f);
    return {background:s.backgroundImage,backgroundColor:s.backgroundColor,
