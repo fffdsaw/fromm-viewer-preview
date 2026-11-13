@@ -11,7 +11,9 @@ Updated: 2026-11-13 (Asia/Seoul)
 - Fixed source commit: `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2`
 - Preview `main` preserved at `d37e2673f48dfa6ef630c95b8af2cb380ef51a3b`.
 - Work branch: `codex/pr121-preview`, based on the unchanged preview `main`.
-- The branch-specific Pages run has not yet been dispatched while this handoff is first written. Record its run URL and final deployed commit after deployment completes.
+- Successful Pages run: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43407345638
+- Deployed preview workflow commit: `fda7a977b4be68538f45abe5faa7cec1deeec0a7`; the artifact metadata reports fixed source `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2`.
+- The `github-pages` environment initially allowed only `main`; its existing `main` rule was retained and `codex/pr121-preview` was added so the requested isolated branch could deploy.
 - Production `main`, production Pages, and the preview repository's `main` were not changed.
 
 ## Build and data boundaries
@@ -44,6 +46,8 @@ Environment: Node.js 22.23.5, Playwright 1.62.1, Chromium 151.0.7922.34.
 - `git diff --check`: PASS.
 
 These checks used synthetic accounts/messages and a locally assembled copy of the fixed source. They did not authenticate to Fromm or call a live account API. The complete PR GitHub Actions results remain on PR #121 and are separate from the preview workflow run.
+
+The successful GitHub Actions run passed every step: build, browser storage/migration isolation, PR unit/browser regressions, Pages artifact upload, and deployment. Public URL verification returned HTTP 200 and confirmed the source SHA, visible-label script, isolated database/PWA/cache namespace, and absence of the old preview overlay.
 
 ## Access Bridge and manual account test
 
