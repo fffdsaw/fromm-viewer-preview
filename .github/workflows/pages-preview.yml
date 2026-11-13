@@ -46,6 +46,7 @@ jobs:
           test -f _site/preview-storage.js
           test -f _site/pr121-preview-banner.js
           test -f _site/pr121-search-nav.css
+          test -f _site/pr121-audio-glass.css
           node --check _site/web-conversation.js
           node --check _site/web-conversation-core.js
           node --check _site/web-glass-controls.js
@@ -62,6 +63,8 @@ jobs:
           grep -q "5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1" _site/pr121-build.json
           grep -q "pr121-search-nav.css" _site/index.html
           grep -q "#chatMatchPrev,#chatMatchNext" _site/web-glass-controls.js
+          grep -q "chat-audio-play,.chat-sound-download')?60" _site/web-glass-controls.js
+          ! grep -q "glass-on-image.*chat-audio-play" _site/web-glass-controls.js
           ! grep -q "preview-chat.js" _site/index.html
 
       - name: Install synthetic browser test tooling
