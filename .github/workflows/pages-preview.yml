@@ -2,7 +2,7 @@ name: Deploy Fromm Viewer Preview
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/pr121-preview]
   workflow_dispatch:
 
 permissions:
@@ -45,8 +45,10 @@ jobs:
           test -f _site/index.html
           test -f _site/preview-storage.js
           test -f _site/pr121-preview-banner.js
+          test -f _site/pr121-search-nav.css
           node --check _site/web-conversation.js
           node --check _site/web-conversation-core.js
+          node --check _site/web-glass-controls.js
           node --check _site/web-pwa.js
           node --check _site/sw.js
           node --check _site/preview-storage.js
@@ -58,6 +60,8 @@ jobs:
           grep -q "scope: '/fromm-viewer-preview/'" _site/web-pwa.js
           grep -q "fromm-viewer-preview-public-art-" _site/sw.js
           grep -q "5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1" _site/pr121-build.json
+          grep -q "pr121-search-nav.css" _site/index.html
+          grep -q "#chatMatchPrev,#chatMatchNext" _site/web-glass-controls.js
           ! grep -q "preview-chat.js" _site/index.html
 
       - name: Install synthetic browser test tooling
