@@ -11,8 +11,8 @@ Updated: 2026-11-13 (Asia/Seoul)
 - Current fixed source commit: `5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1`
 - Preview `main` preserved at `d37e2673f48dfa6ef630c95b8af2cb380ef51a3b`.
 - Work branch: `codex/pr121-preview`, based on the unchanged preview `main`.
-- Successful Pages run for this source: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43412504785
-- Deployed preview workflow commit: `08bc5c4f91c08d669d4ddb338dd20b19d22810b7`; public `pr121-build.json` reports source `6f1f595ff6beb19af2502d95b9949ec788ea46dd`.
+- Successful Pages run for this source: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43419597212
+- Deployed preview workflow commit: `604225bd8ccfcb28289faea5ee0cdf24b0afef76`; public `pr121-build.json` reports source `5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1`.
 - Previous source `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2` was deployed by run 43407345638 and remains an ancestor of the updated PR branch.
 - The `github-pages` environment initially allowed only `main`; its existing `main` rule was retained and `codex/pr121-preview` was added so the requested isolated branch could deploy.
 - Production `main`, production Pages, and the preview repository's `main` were not changed.
@@ -52,15 +52,15 @@ Environment: Node.js 22.23.5, Playwright 1.62.1, Chromium 151.0.7922.34.
 
 These checks used synthetic accounts/messages and a locally assembled copy of the fixed source. They did not authenticate to Fromm or call a live account API. The complete PR GitHub Actions results remain on PR #121 and are separate from the preview workflow run.
 
-Previous successful Pages run 43412504785 deployed PR source `6f1f595`. A new test-site deployment is being prepared for source `5609ede`; verify its build and public `pr121-build.json` before asking the user to retest. The build must retain the visible-label script, isolated database/PWA/cache namespace, and omission of the old preview overlay.
+Run 43419244712 passed build and storage/migration isolation but timed out in `conversation-cache-restore.browser.cjs` at its 3-second post-flush reader-anchor assertion (line 67); the deployment was skipped. The same cache-restore test passed when run alone locally, and the full workflow retry succeeded. Run 43419597212 passed every step: build, storage/migration isolation, PR unit/browser regressions including preserved reply arrows at the quoted original, Pages artifact upload, and deployment. Public verification returned HTTP 200 and `pr121-build.json` reports source `5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1` and preview workflow commit `604225bd8ccfcb28289faea5ee0cdf24b0afef76`.
 
-PR #121 Actions on source `5cee884` passed all checks, including Channel browser regression (16m55s). The PR source `5609ede` has a new validation run; confirm that run after push before reporting complete PR validation.
+PR #121 Actions on source `5609ede` passed Conversation Chrome/Chromium/Edge and download Chrome/Chromium/Edge checks; unit and media regression checks passed. Channel browser regression is still running; see run 43419093659 before reporting complete PR validation.
 
 ## Access Bridge and manual account test
 
 Static inspection of `access_bridge-1.zip` found MV3 host access for `*://*.frommyarti.com/*`, DNR rules matching `frommyarti.com` request URLs, and no `initiatorDomains` restriction. PR #121 calls `api.frommyarti.com`, `account-api.frommyarti.com`, and `channel-api.frommyarti.com`, so the request destinations match those rules in configuration. The extension was not installed or exercised in Chrome; browser-level application and account login remain unverified. The extension's `pages.dev` permission does not cover this `github.io` page, but its `frommyarti.com` request host permission is the relevant destination permission for these rules.
 
-The user should use a separate Chrome profile for the real-account check. After the new deployment succeeds, reopen the test page or hard-refresh it, then confirm the badge and `pr121-build.json` source SHA before retrying quote navigation. Do not clear the preview cache to apply this code-only update. Do not copy tokens, cookies, account IDs, or message text into logs or GitHub. Native LIVE is outside this test scope.
+The user should use a separate Chrome profile for the real-account check. The updated deployment is live; reopen the test page or hard-refresh it, then confirm the badge and `pr121-build.json` source SHA before retrying quote navigation. Do not clear the preview cache to apply this code-only update. Do not copy tokens, cookies, account IDs, or message text into logs or GitHub. Native LIVE is outside this test scope.
 
 ## Risks and recovery
 
