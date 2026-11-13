@@ -127,8 +127,6 @@ controls = replace_glass_once(controls,
 controls = replace_glass_once(controls,
     "specular:menu||settings.specular>0,specularIntensity:menu?.10+settings.specular/400:settings.specular/100",
     "specular:menu||reply||settings.specular>0,specularIntensity:reply?Math.max(.24,settings.specular/100):menu?.10+settings.specular/400:settings.specular/100")
-controls = replace_glass_once(controls,
-    "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:(el.id==='chatMatchPrev'||el.id==='chatMatchNext')?70:el.id==='scrollTopBtn'?50:0;")
 # Prewarm the real Meapri lens for visible voice controls even before hover.
 # The bounded engineTargets map (LIMIT=8) remains intact for long histories.
 controls = replace_glass_once(controls,
