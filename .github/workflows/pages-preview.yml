@@ -79,6 +79,10 @@ jobs:
         shell: bash
         run: PR121_SITE_ROOT="$PWD/_site" node preview/test/pr121-storage-isolation.browser.cjs
 
+      - name: Test voice glass appearance before hover and pointer exit
+        shell: bash
+        run: PR121_SITE_ROOT="$PWD/_site" node preview/test/pr121-voice-glass.browser.cjs
+
       - name: Test PR #121 unit and browser regressions on assembled site
         shell: bash
         run: |
