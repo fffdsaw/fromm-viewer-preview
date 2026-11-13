@@ -5,7 +5,7 @@
 - 운영 웹: https://fffdsaw.github.io/fromm-viewer/
 - 실험용 웹: https://fffdsaw.github.io/fromm-viewer-preview/
 - 운영 저장소의 `main`은 여기서 **수정하지 않습니다**.
-- `main`에는 이전 실험이 보존되어 있고, 현재 PR #121 검증 브랜치 `codex/pr121-preview`는 정식 저장소의 고정 커밋 `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2`를 기준으로 합니다.
+- `main`에는 이전 실험이 보존되어 있고, 현재 PR #121 검증 브랜치 `codex/pr121-preview`는 정식 저장소 PR 브랜치의 고정 커밋 `6f1f595ff6beb19af2502d95b9949ec788ea46dd`를 기준으로 합니다.
 - 공개 저장소이므로 로그인 토큰, 비밀번호, 실제 개인 대화 기록은 커밋하지 않습니다.
 - 운영 웹과 실험용 웹은 `fffdsaw.github.io`의 같은 Origin을 공유합니다. PR #121 테스트 빌드는 별도 IndexedDB 이름, localStorage 접두사, 서비스 워커 경로, Cache Storage 이름을 사용합니다.
 

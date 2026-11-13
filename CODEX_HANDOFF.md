@@ -8,11 +8,11 @@ Updated: 2026-11-13 (Asia/Seoul)
 - Test site: https://fffdsaw.github.io/fromm-viewer-preview/
 - Production source: https://github.com/fffdsaw/fromm-viewer
 - PR under test: https://github.com/fffdsaw/fromm-viewer/pull/121
-- Fixed source commit: `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2`
+- Current fixed source commit: `6f1f595ff6beb19af2502d95b9949ec788ea46dd`
 - Preview `main` preserved at `d37e2673f48dfa6ef630c95b8af2cb380ef51a3b`.
 - Work branch: `codex/pr121-preview`, based on the unchanged preview `main`.
-- Successful Pages run: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43407345638
-- Deployed preview workflow commit: `fda7a977b4be68538f45abe5faa7cec1deeec0a7`; the artifact metadata reports fixed source `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2`.
+- Previous successful Pages run: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43407345638
+- That artifact used preview commit `fda7a977b4be68538f45abe5faa7cec1deeec0a7` and source `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2`. The update to source `6f1f595` is pending its own deployment and public verification.
 - The `github-pages` environment initially allowed only `main`; its existing `main` rule was retained and `codex/pr121-preview` was added so the requested isolated branch could deploy.
 - Production `main`, production Pages, and the preview repository's `main` were not changed.
 
@@ -43,11 +43,13 @@ Environment: Node.js 22.23.5, Playwright 1.62.1, Chromium 151.0.7922.34.
 - Browser storage recovery: PASS, including interrupted writes and completed metadata preservation.
 - Browser progressive history: PASS, including recent-first display, partial restore, background completion and viewport retention.
 - Browser 10,000/50,000 scale: PASS. Synthetic 50,000-row cold scan first displayed in 40 ms, completed in 37.166 s, flushed in 15.592 s, made 102 history requests and 14 incremental requests; 300 rows were visible during the scan. These are local synthetic Chromium measurements, not Fromm service timings.
+- Large quoted-original regression on PR source `6f1f595`: PASS. Navigating from a recent self-reply to a midpoint original in 50,000 synthetic messages keeps the virtualized view at 600 or fewer rows; an absent original leaves the calendar responsive.
+- Full upstream unit suite: 275 passed. Related desktop/mobile browser suites `reply-anchor-context`, `reply-start-top`, `my-replies`, `search-calendar-panel`, and `chat-history-progressive`: PASS.
 - `git diff --check`: PASS.
 
 These checks used synthetic accounts/messages and a locally assembled copy of the fixed source. They did not authenticate to Fromm or call a live account API. The complete PR GitHub Actions results remain on PR #121 and are separate from the preview workflow run.
 
-The successful GitHub Actions run passed every step: build, browser storage/migration isolation, PR unit/browser regressions, Pages artifact upload, and deployment. Public URL verification returned HTTP 200 and confirmed the source SHA, visible-label script, isolated database/PWA/cache namespace, and absence of the old preview overlay.
+The previous successful GitHub Actions run passed every step: build, browser storage/migration isolation, PR unit/browser regressions, Pages artifact upload, and deployment. Public URL verification returned HTTP 200 and confirmed source `7ebcdb4`, the visible-label script, isolated database/PWA/cache namespace, and absence of the old preview overlay. The update to source `6f1f595` still needs its own run and public URL verification.
 
 ## Access Bridge and manual account test
 
@@ -72,4 +74,4 @@ git pull --ff-only origin codex/pr121-preview
 git status --short --branch
 ```
 
-For PR deployment, run `pages-preview.yml` with ref `codex/pr121-preview`; inspect the completed Actions run and fetch `/pr121-build.json` from the test site to verify `sourceCommit` equals the fixed SHA above. Do not merge or deploy the production repository without the user's separate approval.
+For PR deployment, run `pages-preview.yml` with ref `codex/pr121-preview`; inspect the completed Actions run and fetch `/pr121-build.json` from the test site to verify `sourceCommit` equals the current fixed SHA above. Do not merge or deploy the production repository without the user's separate approval.
