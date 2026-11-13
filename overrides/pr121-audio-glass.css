@@ -1,0 +1,58 @@
+/* Preview-only voice optics: a stable glass-looking fallback before the SDK
+   mounts, the same neutral surface after it mounts, and no sticky dark hover.
+   Meapri LiquidGlass/LiquidInteractive remain enabled on both voice controls. */
+#timeline .chat-sound-bubble .chat-audio-player .chat-audio-play,
+#timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download{
+  background:linear-gradient(145deg,#f8fffcdf,#cfe9ddbd)!important;
+  border:1px solid #ffffffc9!important;
+  color:#285f51!important;
+  box-shadow:inset 0 1px 2px #fff, inset 0 -1px 2px #44846d45,0 2px 6px #2c6a5526!important;
+  text-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+  transition:border-color .16s ease,box-shadow .16s ease!important;
+}
+/* Hovering changes optical refraction and specular highlights, not the solid
+   body tint. In particular, never inherit the old near-black media hover. */
+#timeline .chat-sound-bubble .chat-audio-player .chat-audio-play:hover:not(:disabled),
+#timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download:hover{
+  background:linear-gradient(145deg,#f8fffcdf,#cfe9ddbd)!important;
+  border-color:#ffffffdf!important;
+  color:#285f51!important;
+  box-shadow:inset 0 1px 2px #fff, inset 0 -1px 2px #44846d45,0 2px 6px #2c6a5526!important;
+}
+/* Once the Meapri face is present it owns the optics; the physical hit target
+   stays completely transparent in ALL hover/focus/active states. */
+.pc-control-glass.glowme-phase3.pc-layout #timeline .chat-sound-bubble .chat-audio-player .chat-audio-play.glass-control,
+.pc-control-glass.glowme-phase3.pc-layout #timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download.glass-control,
+.pc-control-glass.glowme-phase3.pc-layout #timeline .chat-sound-bubble .chat-audio-player .chat-audio-play.glass-control:hover,
+.pc-control-glass.glowme-phase3.pc-layout #timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download.glass-control:hover{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+.pc-control-glass.glowme-phase3.pc-layout #timeline .chat-sound-bubble .chat-audio-player .glass-control>.control-glass-surface{
+  background:linear-gradient(145deg,#f8fffcdf,#cfe9ddbd)!important;
+  border:1px solid #ffffffc9!important;
+  box-shadow:inset 0 1px 2px #fff, inset 0 -1px 2px #44846d45,0 2px 6px #2c6a5526!important;
+  border-radius:50%;
+  pointer-events:none;
+}
+/* Pointer light has no residual glow once the pointer is outside. Engine
+   lifecycle and pointer-interactive lensing are otherwise untouched. */
+.pc-control-glass.glowme-phase3.pc-layout #timeline .chat-sound-bubble .chat-audio-player .glass-control:not(:hover)>.control-glass-surface{
+  --lg-illum:0!important;
+  --lg-glow:0!important;
+  --lg-tilt-x:0deg!important;
+  --lg-tilt-y:0deg!important;
+}
+@media(prefers-reduced-motion:reduce){
+  #timeline .chat-sound-bubble .chat-audio-player .chat-audio-play,
+  #timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download{transition:none!important}
+}
+@media(forced-colors:active){
+  #timeline .chat-sound-bubble .chat-audio-player .chat-audio-play,
+  #timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download{
+    background:Canvas!important;border:1px solid ButtonText!important;color:ButtonText!important
+  }
+}
