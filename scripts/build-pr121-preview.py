@@ -130,12 +130,13 @@ controls = replace_glass_once(controls,
 controls = replace_glass_once(controls,
     "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:el.id==='scrollTopBtn'?50:0;",
     "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:(el.id==='chatMatchPrev'||el.id==='chatMatchNext')?70:el.id==='scrollTopBtn'?50:0;")
-# The interactive glass face formerly made voice toggles look raised and could
-# leave a dark visual state after pointer exit. Preserve native playback and
-# download behavior; exclude only these two selector entries from the engine.
-voice_selectors = ".chat-audio-play,.chat-sound-download,"
-assert controls.count(voice_selectors) == 2, "Voice lens selectors changed"
-controls = controls.replace(voice_selectors, "")
+# Voice toggles KEEP the Meapri engine. Only remove their image-specific
+# dark lens treatment: they sit on pale chat bubbles, not media thumbnails.
+image_lens_selector = "if(el.matches('.card-download,.replay-download,.chat-media-download,.chat-audio-play,.chat-sound-download,.replay-play'))el.classList.add('glass-on-image');"
+neutral_lens_selector = "if(el.matches('.card-download,.replay-download,.chat-media-download,.replay-play'))el.classList.add('glass-on-image');"
+assert controls.count(image_lens_selector) == 1, "Upstream image-lens selector changed"
+assert controls.count("const controls='#chatMatchPrev,#chatMatchNext,.card-") == 1, "Voice engine target list changed"
+controls = controls.replace(image_lens_selector, neutral_lens_selector, 1)
 controls_path.write_text(controls, encoding="utf-8")
 
 (site / "pr121-build.json").write_text(json.dumps({
