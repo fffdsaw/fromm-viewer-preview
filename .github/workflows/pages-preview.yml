@@ -16,128 +16,86 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build and deploy independent preview
+    name: "Build and deploy PR #121 test site"
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout pinned public Fromm Viewer baseline
+      - name: Checkout fixed PR #121 source
         uses: actions/checkout@v4
         with:
           repository: fffdsaw/fromm-viewer
-          ref: e8c57b137d43e8d16e43ba2cb11db6a5f71636bc
+          ref: 7ebcdb491c7a1ea14cc7a77d02057eb433975cb2
           persist-credentials: false
           path: upstream
 
-      - name: Checkout experimental overlay
+      - name: Checkout preview deployment configuration
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: preview
 
-      - name: Assemble isolated public site
+      - name: Assemble PR-only site with isolated browser storage
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p _site
-          cp upstream/index.html upstream/*.js upstream/*.css upstream/*.webmanifest upstream/.nojekyll _site/
-          cp -a upstream/assets upstream/vendor _site/
-          if test -d preview/overrides; then
-            cp -a preview/overrides/. _site/
-          fi
-          python3 - <<'PY'
-          from pathlib import Path
-          import json
-          html = Path("_site/index.html")
-          source = html.read_text(encoding="utf-8")
-          old = "<title>Fromm Viewer</title>"
-          assert old in source, "Expected title missing from baseline"
-          source = source.replace(old, "<title>Fromm Viewer · 실험용</title>", 1)
-          charset = '<meta charset="utf-8" />'
-          assert charset in source, "Expected UTF-8 head marker missing"
-          from os import environ
-          version = environ.get("GITHUB_SHA", "development")[:12]
-          source = source.replace(charset, charset + chr(10) + '<script src="preview-storage.js?v=' + version + '"></script>', 1)
-          # Main JS module and the nested import must both change URLs per deploy.
-          # Previously the hard-coded cache key reused the old full-pill engine.
-          glass_script = 'web-glass.js?v=single-glass-20261110'
-          assert glass_script in source, "Expected PC glass module script missing"
-          source = source.replace(glass_script, 'web-glass.js?v=' + version, 1)
-          glass_path = Path("_site/web-glass.js")
-          glass = glass_path.read_text(encoding="utf-8")
-          old_import = "./web-glass-controls.js?v=single-glass-20261110"
-          assert old_import in glass, "Expected glass controls module import missing"
-          glass_path.write_text(glass.replace(old_import, "./web-glass-controls.js?v=" + version, 1), encoding="utf-8")
-          needle = "</body>"
-          assert needle in source, "Expected HTML body close missing"
-          source = source.replace(needle, '<script src="preview-chat.js?v=' + version + '"></script>' + chr(10) + needle, 1)
-          html.write_text(source, encoding="utf-8")
-          manifest_path = Path("_site/manifest.webmanifest")
-          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-          manifest["name"] = "Fromm Viewer 실험용"
-          manifest["short_name"] = "Fromm 실험용"
-          manifest["id"] = "/fromm-viewer-preview/"
-          manifest["start_url"] = "/fromm-viewer-preview/"
-          manifest["scope"] = "/fromm-viewer-preview/"
-          core_path = Path("_site/web-conversation-core.js")
-          core = core_path.read_text(encoding="utf-8")
-          assert "name='fromm-conversations-v1'" in core, "Conversation store schema moved"
-          core_path.write_text(core.replace("name='fromm-conversations-v1'", "name='fromm-preview-conversations-v1'", 1), encoding="utf-8")
-          conversation_path = Path("_site/web-conversation.js")
-          conversation = conversation_path.read_text(encoding="utf-8")
-          assert "event.key===epochKey(c.storageAccount,c.host)" in conversation
-          assert "event.key===storageKey(c.storageAccount)" in conversation
-          conversation = conversation.replace("event.key===epochKey(c.storageAccount,c.host)", "event.key==='fromm.preview.v1::'+epochKey(c.storageAccount,c.host)", 1)
-          conversation = conversation.replace("event.key===storageKey(c.storageAccount)", "event.key==='fromm.preview.v1::'+storageKey(c.storageAccount)", 1)
-          old_counter = "changes.filter(m=>!oldKeys.has(messageStableKey(m))).length"
-          assert old_counter in conversation, "Expected new-message counter missing"
-          conversation = conversation.replace(old_counter, "changes.filter(m=>isArtist(m)&&!oldKeys.has(messageStableKey(m))).length", 1)
-          conversation_path.write_text(conversation, encoding="utf-8")
-          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-          PY
+          python3 preview/scripts/build-pr121-preview.py upstream _site "$GITHUB_SHA"
+
           test -f _site/index.html
-          test -f _site/web-conversation.js
-          test -f _site/conversation.css
-          test -f _site/vendor/firebase/conversation-10.12.2.js
-          test -f _site/assets/glowme/favicon-32.png
+          test -f _site/preview-storage.js
+          test -f _site/pr121-preview-banner.js
           node --check _site/web-conversation.js
           node --check _site/web-conversation-core.js
-          node --check _site/preview-chat.js
+          node --check _site/web-pwa.js
+          node --check _site/sw.js
           node --check _site/preview-storage.js
-          node --check _site/web-glass-controls.js
-          grep -q "web-glass.js?v=${GITHUB_SHA:0:12}" _site/index.html
-          grep -q "web-glass-controls.js?v=${GITHUB_SHA:0:12}" _site/web-glass.js
+          node --check _site/pr121-preview-banner.js
+          python3 -m json.tool _site/manifest.webmanifest >/dev/null
+          python3 -m json.tool _site/pr121-build.json >/dev/null
           grep -q "fromm-preview-conversations-v1" _site/web-conversation-core.js
-          grep -q "preview-chat.js?v=" _site/index.html
+          grep -q "fromm-viewer-preview/sw.js" _site/web-pwa.js
+          grep -q "scope: '/fromm-viewer-preview/'" _site/web-pwa.js
+          grep -q "fromm-viewer-preview-public-art-" _site/sw.js
+          grep -q "7ebcdb491c7a1ea14cc7a77d02057eb433975cb2" _site/pr121-build.json
+          ! grep -q "preview-chat.js" _site/index.html
 
-
-      - name: Install isolated browser test tooling
+      - name: Install synthetic browser test tooling
         shell: bash
         run: |
           set -euo pipefail
           cd preview
-          npm install --no-save --package-lock=false playwright@1.62.1
+          npm install --no-save --package-lock=false playwright@1.62.1 axe-core@4.14.0
           npx playwright install --with-deps chromium
 
-      - name: Test preview chat on desktop and mobile
+      - name: Test preview storage boundaries and v1 to v2 migration
+        shell: bash
+        run: PR121_SITE_ROOT="$PWD/_site" node preview/test/pr121-storage-isolation.browser.cjs
+
+      - name: Test PR #121 unit and browser regressions on assembled site
         shell: bash
         run: |
           set -euo pipefail
-          node preview/test/preview-chat.browser.cjs
-          cp _site/index.html _site/preview-chat.js upstream/
-          NODE_PATH="$PWD/preview/node_modules" node upstream/test/conversation-send-focus.browser.cjs
-          NODE_PATH="$PWD/preview/node_modules" node upstream/test/reply-anchor-context.browser.cjs
-          NODE_PATH="$PWD/preview/node_modules" node upstream/test/reply-start-top.browser.cjs
+          # Existing upstream tests serve their checkout root. Populate that temporary
+          # runner checkout with the exact assembled deployment before exercising it.
+          cp -a _site/. upstream/
+          node --test upstream/test/conversation.test.cjs upstream/test/unread.test.cjs
+          export NODE_PATH="$PWD/preview/node_modules"
+          node upstream/test/conversation-state.browser.cjs
+          node upstream/test/conversation-cache-restore.browser.cjs
+          node upstream/test/conversation-cache-conflicts.browser.cjs
+          node upstream/test/conversation-storage-recovery.browser.cjs
+          node upstream/test/chat-history-progressive.browser.cjs
+          node upstream/test/chat-history-scale.browser.cjs
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload preview artifact
+      - name: Upload PR #121 test artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
-      - name: Deploy preview
+      - name: Deploy PR #121 test site
         id: deployment
         uses: actions/deploy-pages@v4
