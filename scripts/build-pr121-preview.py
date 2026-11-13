@@ -22,7 +22,7 @@ for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
 
 preview_root = Path(__file__).resolve().parents[1]
-for filename in ("preview-storage.js", "pr121-preview-banner.js", "pr121-search-nav.css"):
+for filename in ("preview-storage.js", "pr121-preview-banner.js", "pr121-search-nav.css", "pr121-audio-flat.css"):
     shutil.copy2(preview_root / "overrides" / filename, site / filename)
 
 html_path = site / "index.html"
@@ -39,6 +39,12 @@ assert "</head>" in html
 html = html.replace(
     "</head>",
     '<link rel="stylesheet" href="pr121-search-nav.css?v=' + version + '">\n</head>',
+    1,
+)
+# Keep the voice controls flat even when other buttons use the optical engine.
+html = html.replace(
+    "</head>",
+    '<link rel="stylesheet" href="pr121-audio-flat.css?v=' + version + '">\n</head>',
     1,
 )
 assert "</body>" in html
@@ -124,6 +130,12 @@ controls = replace_glass_once(controls,
 controls = replace_glass_once(controls,
     "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:el.id==='scrollTopBtn'?50:0;",
     "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:(el.id==='chatMatchPrev'||el.id==='chatMatchNext')?70:el.id==='scrollTopBtn'?50:0;")
+# The interactive glass face formerly made voice toggles look raised and could
+# leave a dark visual state after pointer exit. Preserve native playback and
+# download behavior; exclude only these two selector entries from the engine.
+voice_selectors = ".chat-audio-play,.chat-sound-download,"
+assert controls.count(voice_selectors) == 2, "Voice lens selectors changed"
+controls = controls.replace(voice_selectors, "")
 controls_path.write_text(controls, encoding="utf-8")
 
 (site / "pr121-build.json").write_text(json.dumps({
