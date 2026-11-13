@@ -11,7 +11,7 @@ if len(sys.argv) != 4:
 upstream = Path(sys.argv[1]).resolve()
 site = Path(sys.argv[2]).resolve()
 build_sha = sys.argv[3]
-source_sha = "6f1f595ff6beb19af2502d95b9949ec788ea46dd"
+source_sha = "5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1"
 version = build_sha[:12]
 site.mkdir(parents=True, exist_ok=True)
 

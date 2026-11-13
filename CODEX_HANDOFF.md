@@ -8,7 +8,7 @@ Updated: 2026-11-13 (Asia/Seoul)
 - Test site: https://fffdsaw.github.io/fromm-viewer-preview/
 - Production source: https://github.com/fffdsaw/fromm-viewer
 - PR under test: https://github.com/fffdsaw/fromm-viewer/pull/121
-- Current fixed source commit: `6f1f595ff6beb19af2502d95b9949ec788ea46dd`
+- Current fixed source commit: `5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1`
 - Preview `main` preserved at `d37e2673f48dfa6ef630c95b8af2cb380ef51a3b`.
 - Work branch: `codex/pr121-preview`, based on the unchanged preview `main`.
 - Successful Pages run for this source: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43412504785
@@ -32,7 +32,7 @@ Production and preview are paths on the same `https://fffdsaw.github.io` origin,
 
 The build script is `scripts/build-pr121-preview.py`. The browser boundary/migration test is `test/pr121-storage-isolation.browser.cjs`. The deployment workflow copies only `preview-storage.js` and `pr121-preview-banner.js`; no real account data is used by CI.
 
-The latest code update changes only quoted-original navigation and its regression test. It does not alter the IndexedDB schema or database name and performs no cache clear. Existing PR-preview cache data remains in `fromm-preview-conversations-v1`.
+The latest code update keeps the “my replies” navigation mode and selected reply active after opening its quoted original, so the up/down reply arrows remain available and continue from the reply the user clicked. It does not alter the IndexedDB schema or database name and performs no cache clear. Existing PR-preview cache data remains in `fromm-preview-conversations-v1`.
 
 ## Verification completed locally
 
@@ -46,21 +46,21 @@ Environment: Node.js 22.23.5, Playwright 1.62.1, Chromium 151.0.7922.34.
 - Browser storage recovery: PASS, including interrupted writes and completed metadata preservation.
 - Browser progressive history: PASS, including recent-first display, partial restore, background completion and viewport retention.
 - Browser 10,000/50,000 scale: PASS. Synthetic 50,000-row cold scan first displayed in 40 ms, completed in 37.166 s, flushed in 15.592 s, made 102 history requests and 14 incremental requests; 300 rows were visible during the scan. These are local synthetic Chromium measurements, not Fromm service timings.
-- Large quoted-original regression on PR source `6f1f595`: PASS. Navigating from a recent self-reply to a midpoint original in 50,000 synthetic messages keeps the virtualized view at 600 or fewer rows; an absent original leaves the calendar responsive.
+- Large quoted-original regression on PR source `5609ede`: PASS locally. Navigating from a recent self-reply to a midpoint original in 50,000 synthetic messages keeps the virtualized view at 600 or fewer rows; reply arrows remain visible and navigate to the prior reply; an absent original leaves the calendar responsive.
 - Full upstream unit suite: 275 passed. Related desktop/mobile browser suites `reply-anchor-context`, `reply-start-top`, `my-replies`, `search-calendar-panel`, and `chat-history-progressive`: PASS.
 - `git diff --check`: PASS.
 
 These checks used synthetic accounts/messages and a locally assembled copy of the fixed source. They did not authenticate to Fromm or call a live account API. The complete PR GitHub Actions results remain on PR #121 and are separate from the preview workflow run.
 
-The latest successful GitHub Actions run passed every step: build, browser storage/migration isolation, PR unit/browser regressions (including the new 50k quote jump and calendar test), Pages artifact upload, and deployment. Public URL verification returned HTTP 200 and confirmed source `6f1f595`, the visible-label script, isolated database/PWA/cache namespace, and absence of the old preview overlay.
+Previous successful Pages run 43412504785 deployed PR source `6f1f595`. A new test-site deployment is being prepared for source `5609ede`; verify its build and public `pr121-build.json` before asking the user to retest. The build must retain the visible-label script, isolated database/PWA/cache namespace, and omission of the old preview overlay.
 
-PR #121 Actions on source `6f1f595`: Video download engine, Media bulk save, and Conversation receive/send/persistence are successful; Channel videos regression is still running at the time of this update. Check run [43412123644](https://github.com/fffdsaw/fromm-viewer/actions/runs/43412123644) before reporting complete PR validation.
+PR #121 Actions on source `5cee884` passed all checks, including Channel browser regression (16m55s). The PR source `5609ede` has a new validation run; confirm that run after push before reporting complete PR validation.
 
 ## Access Bridge and manual account test
 
 Static inspection of `access_bridge-1.zip` found MV3 host access for `*://*.frommyarti.com/*`, DNR rules matching `frommyarti.com` request URLs, and no `initiatorDomains` restriction. PR #121 calls `api.frommyarti.com`, `account-api.frommyarti.com`, and `channel-api.frommyarti.com`, so the request destinations match those rules in configuration. The extension was not installed or exercised in Chrome; browser-level application and account login remain unverified. The extension's `pages.dev` permission does not cover this `github.io` page, but its `frommyarti.com` request host permission is the relevant destination permission for these rules.
 
-The user should use a separate Chrome profile for the real-account check. The fix is deployed; reopen the test page or hard-refresh it, then confirm the badge and `pr121-build.json` source SHA before retrying. Test sign-in, artist selection/history loading, cache re-entry, search/date, and media. Do not clear the preview cache to apply this code-only update. Do not copy tokens, cookies, account IDs, or message text into logs or GitHub. Native LIVE is outside this test scope.
+The user should use a separate Chrome profile for the real-account check. After the new deployment succeeds, reopen the test page or hard-refresh it, then confirm the badge and `pr121-build.json` source SHA before retrying quote navigation. Do not clear the preview cache to apply this code-only update. Do not copy tokens, cookies, account IDs, or message text into logs or GitHub. Native LIVE is outside this test scope.
 
 ## Risks and recovery
 

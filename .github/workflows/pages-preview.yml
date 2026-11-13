@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: fffdsaw/fromm-viewer
-          ref: 6f1f595ff6beb19af2502d95b9949ec788ea46dd
+          ref: 5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1
           persist-credentials: false
           path: upstream
 
@@ -57,7 +57,7 @@ jobs:
           grep -q "fromm-viewer-preview/sw.js" _site/web-pwa.js
           grep -q "scope: '/fromm-viewer-preview/'" _site/web-pwa.js
           grep -q "fromm-viewer-preview-public-art-" _site/sw.js
-          grep -q "6f1f595ff6beb19af2502d95b9949ec788ea46dd" _site/pr121-build.json
+          grep -q "5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1" _site/pr121-build.json
           ! grep -q "preview-chat.js" _site/index.html
 
       - name: Install synthetic browser test tooling
