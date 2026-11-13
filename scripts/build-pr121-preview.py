@@ -22,7 +22,7 @@ for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
 
 preview_root = Path(__file__).resolve().parents[1]
-for filename in ("preview-storage.js", "pr121-preview-banner.js", "pr121-search-nav.css", "pr121-audio-flat.css"):
+for filename in ("preview-storage.js", "pr121-preview-banner.js", "pr121-search-nav.css", "pr121-audio-glass.css"):
     shutil.copy2(preview_root / "overrides" / filename, site / filename)
 
 html_path = site / "index.html"
@@ -41,10 +41,10 @@ html = html.replace(
     '<link rel="stylesheet" href="pr121-search-nav.css?v=' + version + '">\n</head>',
     1,
 )
-# Keep the voice controls flat even when other buttons use the optical engine.
+# Give voice controls a glass fallback matching the Meapri face at rest.
 html = html.replace(
     "</head>",
-    '<link rel="stylesheet" href="pr121-audio-flat.css?v=' + version + '">\n</head>',
+    '<link rel="stylesheet" href="pr121-audio-glass.css?v=' + version + '">\n</head>',
     1,
 )
 assert "</body>" in html
@@ -128,14 +128,19 @@ controls = replace_glass_once(controls,
     "specular:menu||settings.specular>0,specularIntensity:menu?.10+settings.specular/400:settings.specular/100",
     "specular:menu||reply||settings.specular>0,specularIntensity:reply?Math.max(.24,settings.specular/100):menu?.10+settings.specular/400:settings.specular/100")
 controls = replace_glass_once(controls,
-    "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:el.id==='scrollTopBtn'?50:0;",
     "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:(el.id==='chatMatchPrev'||el.id==='chatMatchNext')?70:el.id==='scrollTopBtn'?50:0;")
+# Prewarm the real Meapri lens for visible voice controls even before hover.
+# The bounded engineTargets map (LIMIT=8) remains intact for long histories.
+controls = replace_glass_once(controls,
+    "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:el.id==='scrollTopBtn'?50:0;",
+    "el.id==='conversationNew'?85:el.matches(selected)||el===pointer?80:(el.id==='chatMatchPrev'||el.id==='chatMatchNext')?70:el.matches('.chat-audio-play,.chat-sound-download')?60:el.id==='scrollTopBtn'?50:0;")
 # Voice toggles KEEP the Meapri engine. Only remove their image-specific
 # dark lens treatment: they sit on pale chat bubbles, not media thumbnails.
 image_lens_selector = "if(el.matches('.card-download,.replay-download,.chat-media-download,.chat-audio-play,.chat-sound-download,.replay-play'))el.classList.add('glass-on-image');"
 neutral_lens_selector = "if(el.matches('.card-download,.replay-download,.chat-media-download,.replay-play'))el.classList.add('glass-on-image');"
 assert controls.count(image_lens_selector) == 1, "Upstream image-lens selector changed"
 assert controls.count("const controls='#chatMatchPrev,#chatMatchNext,.card-") == 1, "Voice engine target list changed"
+assert controls.count("el.matches('.chat-audio-play,.chat-sound-download')?60") == 1, "Voice prewarm priority missing"
 controls = controls.replace(image_lens_selector, neutral_lens_selector, 1)
 controls_path.write_text(controls, encoding="utf-8")
 
