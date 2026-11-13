@@ -11,8 +11,9 @@ Updated: 2026-11-13 (Asia/Seoul)
 - Current fixed source commit: `6f1f595ff6beb19af2502d95b9949ec788ea46dd`
 - Preview `main` preserved at `d37e2673f48dfa6ef630c95b8af2cb380ef51a3b`.
 - Work branch: `codex/pr121-preview`, based on the unchanged preview `main`.
-- Previous successful Pages run: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43407345638
-- That artifact used preview commit `fda7a977b4be68538f45abe5faa7cec1deeec0a7` and source `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2`. The update to source `6f1f595` is pending its own deployment and public verification.
+- Successful Pages run for this source: https://github.com/fffdsaw/fromm-viewer-preview/actions/runs/43412504785
+- Deployed preview workflow commit: `08bc5c4f91c08d669d4ddb338dd20b19d22810b7`; public `pr121-build.json` reports source `6f1f595ff6beb19af2502d95b9949ec788ea46dd`.
+- Previous source `7ebcdb491c7a1ea14cc7a77d02057eb433975cb2` was deployed by run 43407345638 and remains an ancestor of the updated PR branch.
 - The `github-pages` environment initially allowed only `main`; its existing `main` rule was retained and `codex/pr121-preview` was added so the requested isolated branch could deploy.
 - Production `main`, production Pages, and the preview repository's `main` were not changed.
 
@@ -30,6 +31,8 @@ Production and preview are paths on the same `https://fffdsaw.github.io` origin,
 - displays the persistent `실험용 · PR #121` badge.
 
 The build script is `scripts/build-pr121-preview.py`. The browser boundary/migration test is `test/pr121-storage-isolation.browser.cjs`. The deployment workflow copies only `preview-storage.js` and `pr121-preview-banner.js`; no real account data is used by CI.
+
+The latest code update changes only quoted-original navigation and its regression test. It does not alter the IndexedDB schema or database name and performs no cache clear. Existing PR-preview cache data remains in `fromm-preview-conversations-v1`.
 
 ## Verification completed locally
 
@@ -49,13 +52,15 @@ Environment: Node.js 22.23.5, Playwright 1.62.1, Chromium 151.0.7922.34.
 
 These checks used synthetic accounts/messages and a locally assembled copy of the fixed source. They did not authenticate to Fromm or call a live account API. The complete PR GitHub Actions results remain on PR #121 and are separate from the preview workflow run.
 
-The previous successful GitHub Actions run passed every step: build, browser storage/migration isolation, PR unit/browser regressions, Pages artifact upload, and deployment. Public URL verification returned HTTP 200 and confirmed source `7ebcdb4`, the visible-label script, isolated database/PWA/cache namespace, and absence of the old preview overlay. The update to source `6f1f595` still needs its own run and public URL verification.
+The latest successful GitHub Actions run passed every step: build, browser storage/migration isolation, PR unit/browser regressions (including the new 50k quote jump and calendar test), Pages artifact upload, and deployment. Public URL verification returned HTTP 200 and confirmed source `6f1f595`, the visible-label script, isolated database/PWA/cache namespace, and absence of the old preview overlay.
+
+PR #121 Actions on source `6f1f595`: Video download engine, Media bulk save, and Conversation receive/send/persistence are successful; Channel videos regression is still running at the time of this update. Check run [43412123644](https://github.com/fffdsaw/fromm-viewer/actions/runs/43412123644) before reporting complete PR validation.
 
 ## Access Bridge and manual account test
 
 Static inspection of `access_bridge-1.zip` found MV3 host access for `*://*.frommyarti.com/*`, DNR rules matching `frommyarti.com` request URLs, and no `initiatorDomains` restriction. PR #121 calls `api.frommyarti.com`, `account-api.frommyarti.com`, and `channel-api.frommyarti.com`, so the request destinations match those rules in configuration. The extension was not installed or exercised in Chrome; browser-level application and account login remain unverified. The extension's `pages.dev` permission does not cover this `github.io` page, but its `frommyarti.com` request host permission is the relevant destination permission for these rules.
 
-The user should use a separate Chrome profile for the real-account check. After deployment, confirm the badge and `pr121-build.json` source SHA, then manually test sign-in, artist selection/history loading, cache re-entry, search/date, and media. Do not copy tokens, cookies, account IDs, or message text into logs or GitHub. Native LIVE is outside this test scope.
+The user should use a separate Chrome profile for the real-account check. The fix is deployed; reopen the test page or hard-refresh it, then confirm the badge and `pr121-build.json` source SHA before retrying. Test sign-in, artist selection/history loading, cache re-entry, search/date, and media. Do not clear the preview cache to apply this code-only update. Do not copy tokens, cookies, account IDs, or message text into logs or GitHub. Native LIVE is outside this test scope.
 
 ## Risks and recovery
 
