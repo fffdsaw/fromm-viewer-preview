@@ -1,0 +1,43 @@
+/* PR #121 preview only: voice-card play and download controls stay flat.
+   The common Liquid Glass control engine is intentionally excluded for these two
+   controls at build time; audio state, seek, volume and the download ring are untouched. */
+#timeline .chat-sound-bubble .chat-audio-player .chat-audio-play,
+#timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download{
+  background:rgba(32,70,60,.82)!important;
+  border:1px solid rgba(255,255,255,.15)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+  transition:background-color .16s ease,border-color .16s ease!important;
+}
+#timeline .chat-sound-bubble .chat-audio-player .chat-audio-play:hover:not(:disabled),
+#timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download:hover{
+  background:rgba(20,52,44,.94)!important;
+  border-color:rgba(255,255,255,.28)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+#timeline .chat-sound-bubble .chat-audio-player .chat-audio-play:not(:hover):not(:active),
+#timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download:not(:hover):not(:active){
+  background:rgba(32,70,60,.82)!important;
+  border-color:rgba(255,255,255,.15)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+#timeline .chat-sound-bubble .chat-audio-player .chat-sound-download>.download-feedback-icon{
+  filter:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+  #timeline .chat-sound-bubble .chat-audio-player .chat-audio-play,
+  #timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download{
+    transition:none!important;
+  }
+}
+@media(forced-colors:active){
+  #timeline .chat-sound-bubble .chat-audio-player .chat-audio-play,
+  #timeline .chat-sound-bubble .chat-audio-player .media-actions a.chat-sound-download{
+    background:Canvas!important;border:1px solid ButtonText!important;color:ButtonText!important;
+  }
+}
