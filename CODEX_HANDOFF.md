@@ -54,7 +54,7 @@ These checks used synthetic accounts/messages and a locally assembled copy of th
 
 Run 43419244712 passed build and storage/migration isolation but timed out in `conversation-cache-restore.browser.cjs` at its 3-second post-flush reader-anchor assertion (line 67); the deployment was skipped. The same cache-restore test passed when run alone locally, and the full workflow retry succeeded. Run 43419597212 passed every step: build, storage/migration isolation, PR unit/browser regressions including preserved reply arrows at the quoted original, Pages artifact upload, and deployment. Public verification returned HTTP 200 and `pr121-build.json` reports source `5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1` and preview workflow commit `604225bd8ccfcb28289faea5ee0cdf24b0afef76`.
 
-PR #121 Actions on source `5609ede` passed Conversation Chrome/Chromium/Edge and download Chrome/Chromium/Edge checks; unit and media regression checks passed. Channel browser regression is still running; see run 43419093659 before reporting complete PR validation.
+PR #121 Actions on source `5609ede` passed all checks, including the Channel browser suite (16m08s). On the later handoff-only head `ad05377867ba76f2f3c6aa5ad36ef75f9014e75d`, [run 43421678801](https://github.com/fffdsaw/fromm-viewer/actions/runs/43421678801) first failed Chromium's existing post-flush cache reader-anchor assertion, then passed on the failed-job rerun; Chrome and Edge passed. The changed quote-navigation code does not modify cache flush or reader-anchor behavior.
 
 ## Access Bridge and manual account test
 
