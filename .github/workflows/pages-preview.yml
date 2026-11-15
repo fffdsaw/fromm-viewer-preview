@@ -28,6 +28,9 @@ jobs:
         with:
           repository: fffdsaw/fromm-viewer
           ref: 1c7bb5019180d37549abb6b12cfc09c729de1dc5
+          # The Node regression tests compare against historical b78f2b1.
+          # A shallow checkout omits that ancestor and fails git rev-parse.
+          fetch-depth: 0
           persist-credentials: false
           path: upstream
 
