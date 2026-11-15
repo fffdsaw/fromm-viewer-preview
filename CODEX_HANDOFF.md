@@ -1,3 +1,17 @@
+# 2026-11-15 — Audio gallery now uses video-style bottom controls (requested visual follow-up)
+
+- The user provided two real screenshots: native gray centered audio bar (undesired) and native video thumbnail with bottom-overlay controls (target). Implement the audio gallery to visually follow the latter without tampering with the media engine, download buttons, or other sections.
+- Branch: `codex/pr123-audio-like-video-controls-20261115`. Target repository: **preview only** `fffdsaw/fromm-viewer-preview`.
+- A scoped script `overrides/pr123-gallery-audio-controls.js` enhances only gallery `<audio>` elements and replaces the centered gray browser audio pill with native-video-like bottom overlay: play/pause at lower left, elapsed time, mute control and overflow menu (volume and playback speed), seek bar along lower edge. It preserves the real HTMLAudioElement and uses no network analysis or new media requests.
+- `overrides/pr123-legacy-media.css` now matches gallery audio thumbnail aspect ratio to video cards (1.45:1), with an unobtrusive dark background; it hides native audio controls only after a successfully mounted overlay. If the script is unavailable the original audio control remains.
+- `scripts/build-pr123-preview.py` embeds the script and switches the gallery enhancement hook, leaves video thumbnails on native Chrome controls, and writes `galleryPlayerMode: video-style-audio-native-video` to `pr123-build.json`.
+- The existing storage-isolation browser test additionally checks actual overlay DOM and geometry, native video controls preserved, local synthetic WAV playback, seek, mute, and speed; no Fromm API or real account data is used.
+- `.github/workflows/pages-preview.yml` checks the new asset and JavaScript syntax before deploying.
+- **Do not merge to the operating `fffdsaw/fromm-viewer` main, apply PR #124/#125, delete old preview DB, or replace Replay/Channel/LIVE native streaming playback.**
+- Upon merge, verify preview GitHub Pages publishes the new `pr123-build.json` and run passes; do not infer successful deployment from merge alone.
+
+---
+
 # 2026-11-15 — Preview legacy gallery player rollback (user visual review)
 
 - User reported PR #123 gallery audio thumbnails were disproportionate and the revamped small-card player looked worse than the prior version. This rollback restores the **native browser** audio/video controls **only for gallery cards**, and reduces the audio-only thumb to 116–172px rather than reserving a video-size 1.45:1 stage.
