@@ -99,15 +99,41 @@ async function seedV1(page, name, content) {
     assert.equal(build.storageNamespace, 'fromm.preview.v1::');
     assert.equal(build.indexedDB, 'fromm-preview-conversations-v1');
     assert.equal(build.containsExperimentalOptics124or125, false);
+    assert.equal(build.galleryPlayerMode, 'legacy-native', 'gallery player rollback active');
     assert.ok((await page.locator('link[href*="themes.css"]').count()) > 0, 'theme stylesheet linked');
     assert.ok((await page.locator('link[href*="settings-panel.css"]').count()) > 0, 'settings stylesheet linked');
     assert.ok((await page.locator('link[href*="compact-player.css"]').count()) > 0, 'compact player linked');
     assert.ok((await page.locator('script[src*="web-themes.js"]').count()) > 0, 'theme controller linked');
-    assert.ok((await page.locator('script[src*="web-compact-player.js"]').count()) > 0, 'compact player module linked');
-    for (const file of ['themes.css', 'settings-panel.css', 'compact-player.css', 'web-themes.js', 'web-compact-player.js']) {
+    assert.equal(await page.locator('script[src*="web-compact-player.js"]').count(), 0, 'gallery video keeps original browser controls');
+    assert.ok((await page.locator('link[href*="pr123-legacy-media.css"]').count()) > 0, 'native gallery audio styles linked');
+    for (const file of ['themes.css', 'settings-panel.css', 'compact-player.css', 'web-themes.js', 'web-compact-player.js', 'pr123-legacy-media.css']) {
       const response = await page.request.get(new URL(file, server.url).href);
       assert.equal(response.status(), 200, file + ' included in deployed build');
     }
+
+    const legacyCard = await page.evaluate(() => {
+      const fixture = document.createElement('article');
+      fixture.className = 'media-card';
+      fixture.style.width = '320px';
+      fixture.innerHTML = '<div class="thumb audio-thumb media-ready"><div class="audio-icon">🎧</div><div class="audio-player-overlay"><audio controls preload="none"></audio></div></div><div class="thumb"><video controls preload="none"></video></div>';
+      document.body.appendChild(fixture);
+      const audio = fixture.querySelector('audio');
+      const video = fixture.querySelector('video');
+      const thumb = fixture.querySelector('.audio-thumb');
+      const layout = { audioControls: audio.controls, videoControls: video.controls,
+        audioHeight: thumb.getBoundingClientRect().height,
+        iconHidden: getComputedStyle(fixture.querySelector('.audio-icon')).display === 'none',
+        nativeAudioVisible: getComputedStyle(audio).display !== 'none',
+      };
+      fixture.remove();
+      return layout;
+    });
+    assert.equal(legacyCard.audioControls, true, 'browser native audio controls retained');
+    assert.equal(legacyCard.videoControls, true, 'browser native video controls retained');
+    assert.ok(legacyCard.audioHeight >= 100 && legacyCard.audioHeight <= 180,
+      'audio-only card must not keep the large video thumbnail ratio: ' + JSON.stringify(legacyCard));
+    assert.equal(legacyCard.iconHidden, true, 'decorative headphone icon not stacked with native controls');
+    assert.equal(legacyCard.nativeAudioVisible, true, 'native audio controls are visible');
 
     const localStorageResult = await page.evaluate(() => {
       localStorage.setItem('pr123-synthetic-probe', 'preview-value');

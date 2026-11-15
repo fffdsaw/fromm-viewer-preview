@@ -29,7 +29,7 @@ for pattern in ("index.html", "*.js", "*.css", "*.webmanifest", ".nojekyll"):
         shutil.copy2(source, site / source.name)
 for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
-for filename in ("preview-storage.js", "pr123-preview-banner.js"):
+for filename in ("preview-storage.js", "pr123-preview-banner.js", "pr123-legacy-media.css"):
     shutil.copy2(preview / "overrides" / filename, site / filename)
 
 def replace_exact(value, old, new, why):
@@ -48,6 +48,20 @@ html = replace_exact(html, charset, charset + "\n"
 html = replace_exact(html, "</body>",
                      f'<script src="pr123-preview-banner.js?v={version}"></script>\n</body>',
                      "preview badge")
+# Keep the historical native browser players for gallery audio/video instead of
+# mounting the PR #123 compact controller and oversized waveform player.
+# Expanded Replay/Channel/LIVE are specialized streaming UIs; do not remove
+# quality selection, PiP or stream handling.
+html = replace_exact(html, '<script src="web-compact-player.js?v=stable-glass-glyph-20261115"></script>',
+                     '<!-- Legacy gallery video controls restored in preview -->',
+                     "remove compact video override")
+html = replace_exact(html, 'window.FrommChatAudio?.enhance(a,{gallery:true});',
+                     '// Preview uses native gallery audio controls.', "restore native gallery audio")
+html = replace_exact(html, 'thumb?.classList.add("audio-player-ready");',
+                     '// Preview native audio keeps the normal thumb state.', "native gallery audio thumb")
+html = replace_exact(html, "</head>",
+                     f'<link rel="stylesheet" href="pr123-legacy-media.css?v={version}">\n</head>',
+                     "audio-only aspect ratio override")
 html_path.write_text(html, encoding="utf-8")
 
 manifest_path = site / "manifest.webmanifest"
@@ -100,7 +114,7 @@ required = ("index.html", "web-compact-player.js", "compact-player.css",
             "web-themes.js", "themes.css", "settings-panel.css",
             "web-glass-controls.js", "web-glass-settings.js",
             "web-chat-audio.js", "web-pwa.js", "sw.js",
-            "preview-storage.js", "pr123-preview-banner.js")
+            "preview-storage.js", "pr123-preview-banner.js", "pr123-legacy-media.css")
 for filename in required:
     if not (site / filename).is_file():
         raise AssertionError(f"required PR #123 preview asset missing: {filename}")
@@ -114,4 +128,5 @@ for filename in required:
     "storageNamespace": STORAGE_PREFIX,
     "indexedDB": "fromm-preview-conversations-v1",
     "containsExperimentalOptics124or125": False,
+    "galleryPlayerMode": "legacy-native",
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
