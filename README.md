@@ -1,33 +1,40 @@
-# Fromm Viewer · 실험용 웹
+# Fromm Viewer · 실험용 웹 (PR #123 통합 개선)
 
-이 저장소는 공개 운영 중인 [Fromm Viewer](https://github.com/fffdsaw/fromm-viewer)의 **독립 실험용 배포**입니다.
+운영 웹 **https://fffdsaw.github.io/fromm-viewer/** 과 독립된 GitHub Pages 실험용 사이트입니다.
 
-- 운영 웹: https://fffdsaw.github.io/fromm-viewer/
-- 실험용 웹: https://fffdsaw.github.io/fromm-viewer-preview/
-- 운영 저장소의 `main`은 여기서 **수정하지 않습니다**.
-- 실험용은 운영 저장소의 확인된 커밋 `e8c57b137d43e8d16e43ba2cb11db6a5f71636bc`을 기준으로 만듭니다.
-- 공개 저장소이므로 로그인 토큰, 비밀번호, 실제 개인 대화 기록은 커밋하지 않습니다.
+- **실험 사이트:** https://fffdsaw.github.io/fromm-viewer-preview/
+- **실험용 저장소:** `fffdsaw/fromm-viewer-preview`
+- **검증 대상 소스:** 운영 저장소 `fffdsaw/fromm-viewer` 의 PR #123, 고정 커밋 `1c7bb5019180d37549abb6b12cfc09c729de1dc5`
+- **설치 확인:** 사이트의 `/pr123-build.json`에서 `sourceCommit` 및 `previewWorkflowCommit`을 검증합니다.
+- **배포:** 실험용 저장소 `main`에 푸시하면 `.github/workflows/pages-preview.yml`이 합성 데이터 기반 테스트 후 GitHub Pages에 게시합니다.
+- **복구용 체크포인트:** `backup/pr121-preview-before-pr123-20261115` 브랜치. 운영 저장소의 `main`과는 무관합니다.
+- **별도 광학 실험 PR #124/#125:** 배포 소스에 포함하지 않습니다.
 
-## 최초 1회: Pages 활성화
+## 브라우저 데이터 격리
 
-1. [이 저장소의 Settings → Pages](https://github.com/fffdsaw/fromm-viewer-preview/settings/pages)로 이동합니다.
-2. **Build and deployment → Source**를 **GitHub Actions**로 변경합니다.
-3. 이미 존재하는 [Deploy Fromm Viewer Preview 워크플로](https://github.com/fffdsaw/fromm-viewer-preview/actions/workflows/pages-preview.yml)를 **Run workflow**로 실행하거나 `main`에 새 커밋을 푸시하면 자동 배포됩니다.
-4. 배포 완료 후 실험용 웹 주소로 접속합니다.
+운영 사이트와 실험용 사이트는 같은 `fffdsaw.github.io` Origin(출처)을 공유하므로 서로 다른 경로만으로는 저장소가 격리되지 않습니다. 실험용은 운영 계정 저장 기록 보호를 위해 아래 이름을 별도로 사용합니다.
 
-## 실험용 수정 방법
+- IndexedDB: `fromm-preview-conversations-v1` (기존 실험용 데이터 재사용, 강제 삭제 금지)
+- localStorage: `fromm.preview.v1::` 접두사
+- Service Worker: `/fromm-viewer-preview/sw.js` 및 해당 경로로 한정된 scope
+- Cache Storage: `fromm-viewer-preview-public-art-` 접두사
+- PWA manifest: `/fromm-viewer-preview/` 전용
+- 화면에는 `실험용 · PR #123` 구분 표시
 
-`overrides/` 디렉터리에 변경할 사이트 파일을 운영 웹과 동일한 상대 경로로 저장합니다.
-예시: `overrides/web-conversation.js`, `overrides/index.html`, `overrides/conversation.css`.
+이것은 저장 키 충돌 방지이지, 서로 다른 Origin과 같은 보안 경계는 아닙니다. 민감한 계정 검증에는 운영 사이트와 다른 Chrome 브라우저 프로필을 권장합니다.
 
-자동 배포는 고정된 운영 버전의 웹 파일을 가져온 다음 `overrides/`의 내용을 덮어쓰고, GitHub Pages에 게시합니다. 개발 문서/테스트 자료나 인증 데이터는 사이트 배포에 포함하지 않습니다.
+## 자동 배포 및 검증
 
-기본 화면의 웹 문서 제목과 PWA 이름에 `실험용` 표시를 추가하여 운영 버전과 구분합니다. 더 이상 테스트가 필요하지 않으면 실험용 저장소만 비활성화할 수 있습니다.
+[Deploy Fromm Viewer Preview](https://github.com/fffdsaw/fromm-viewer-preview/actions/workflows/pages-preview.yml)
 
-## 실험 우선순위
+워크플로는 소스의 고정 커밋에서 HTML/JS/CSS/이미지/벤더 자산을 복사해 구성합니다. 기존 PR #121 시절 `preview-chat.js` 및 시각적 오버라이드는 PR #123의 원래 기능을 가리지 않도록 빌드에서 제외합니다. 기존 파일과 Git 기록은 삭제하지 않습니다.
 
-1. 새 메시지 표시: 미확인 메시지 수 및 배지, 최신 대화 이동
-2. 대화창 안정화: 진입 위치, 스크롤 복원, 모바일 입력창 겹침
-3. 인용 메시지: 나/팬 구분, 원문 이동 및 강조
+실험용 격리·데이터베이스 이전·서비스 워커·테마/설정창/플레이어 자산 검증, 소스 회귀 검사를 통과해야만 배포를 실행합니다. 이후 `pr123-build.json`으로 실제 사이트 게시 버전을 확인합니다.
 
-서버에서 실제 읽음 정보가 제공되지 않을 때는 로컬 확인 시점 기반 새 메시지 수와 서버의 읽음 상태를 혼동하지 않습니다.
+실제 Fromm 인증 API, 개인 계정 데이터, 실기기 Android/iOS 및 Safari는 GitHub Actions가 검증하지 않습니다. 토큰이나 실제 메시지는 저장소 이슈·로그·커밋에 올리지 마세요.
+
+**이 저장소에 병합하거나 배포해도 운영 `fffdsaw/fromm-viewer` 의 `main`과 운영 페이지는 변경되지 않습니다.**
+
+## 다시 시작하기
+
+인수인계: [CODEX_HANDOFF.md](CODEX_HANDOFF.md). 예전 PR #121 실험은 `backup/pr121-preview-before-pr123-20261115`에서 확인합니다. 단순히 예전 브랜치를 배포하기 전에 새로운 격리·테스트 구성이 맞는지 확인해야 합니다.
