@@ -1,3 +1,26 @@
+# Fromm Viewer Preview — PR #123 isolated integration (2026-11-15)
+
+## Current scope and safety
+- Source is pinned to `fffdsaw/fromm-viewer` PR #123 at `1c7bb5019180d37549abb6b12cfc09c729de1dc5` (13 UI/UX items; final implementation 10/10 CI succeeded in source repo).
+- Active preview branch remains `codex/pr121-preview` because its existing GitHub Pages environment permits this branch. The old PR #121 preview state is preserved at `backup/pr121-preview-before-pr123-20261115` (`f3f6e123c2fd8493d7c0877066d46738d5314a93`).
+- New build `scripts/build-pr123-preview.py` copies the complete verified source assets, including settings, themes, and compact player. It DOES NOT apply historical PR121 visual/conversation overrides, which would mask PR123 changes.
+- Reuses `overrides/preview-storage.js` and existing prefix `fromm.preview.v1::` without clearing stored data; IndexedDB remains `fromm-preview-conversations-v1` (v2). Service worker, cache keys, and PWA URLs are restricted to `/fromm-viewer-preview/`. The visible badge now says `실험용 · PR #123`.
+- New `test/pr123-storage-isolation.browser.cjs` checks old preview v1→v2 migration, production DB/localStorage sentinel preservation, SW scope and cache, new settings/theme/player assets, and release source SHA.
+- The deployment workflow `.github/workflows/pages-preview.yml` on this branch runs these checks plus pinned source regressions, then deploys **only** to `https://fffdsaw.github.io/fromm-viewer-preview/` and verifies the public `pr123-build.json` source/workflow SHAs.
+- Main repository `fffdsaw/fromm-viewer` main and its public Pages, PR #123, optical experiment PRs #124/#125, and preview `main` were not edited.
+- **Deployment not yet verified at this checkpoint.** The connected GitHub run-list query returned no workflow executions for the recent preview API-created commits. Do not claim deployment succeeded; inspect Actions and, if necessary, manually dispatch `pages-preview.yml` with branch `codex/pr121-preview`, then check the workflow and public `pr123-build.json`.
+- Do not overwrite any actual account state or clear preview caches; test migration with synthetic records only.
+
+## Resume
+1. Check preview branch HEAD and exact source SHA; do not recreate work or change preview main.
+2. Check `https://github.com/fffdsaw/fromm-viewer-preview/actions/workflows/pages-preview.yml` for the latest run on `codex/pr121-preview`.
+3. If no run exists, click **Run workflow** and select **codex/pr121-preview** (the workflow has `workflow_dispatch`).
+4. Inspect failing step logs; repair only the preview branch, push and rerun. Do not weaken storage isolation assertions.
+5. Confirm `https://fffdsaw.github.io/fromm-viewer-preview/pr123-build.json` contains source SHA `1c7bb5019180d37549abb6b12cfc09c729de1dc5` and matching workflow SHA. Then visually test with a real account; this has not been done.
+6. No operation on production main, preview main, or PR #124/#125 without new authorization.
+
+---
+
 # Fromm Viewer Preview — PR #121 handoff
 
 Updated: 2026-11-13 (Asia/Seoul)
