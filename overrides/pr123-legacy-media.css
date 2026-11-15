@@ -1,0 +1,43 @@
+/* Preview-only visual rollback of PR #123 gallery player changes.
+   Existing streaming, message, download, selected state and glass engines stay intact.
+   The old native HTML audio/video controls are shown in gallery cards. */
+
+/* Photos/videos retain the existing gallery card geometry. Audio-only items
+   should not reserve a full 1.45:1 black video thumbnail for a few seconds
+   of sound. Keep card width and metadata while compressing the audio stage. */
+.media-card .thumb.audio-thumb:has(audio) {
+  aspect-ratio: auto !important;
+  height: clamp(124px, 11vw, 172px) !important;
+  min-height: 124px !important;
+  contain-intrinsic-size: auto !important;
+  content-visibility: visible;
+  background: linear-gradient(135deg,#101b1d,#1c3431) !important;
+  gap: 0;
+}
+.media-card .thumb.audio-thumb:has(audio) .audio-icon {
+  display: none !important;
+}
+/* Restore the original browser-supplied audio scrubber in the visual center. */
+.media-card .thumb.audio-thumb .audio-player-overlay {
+  position: relative !important;
+  inset: auto !important;
+  width: min(92%, 420px);
+  min-width: 0;
+  max-width: calc(100% - 28px);
+}
+.media-card .thumb.audio-thumb .audio-player-overlay audio {
+  display: block !important;
+  width: 100% !important;
+  height: 42px !important;
+  max-width: 100%;
+  color-scheme: dark;
+}
+/* Never show the replacement waveform player in the gallery. The conversation
+   message voice player and its authentic Meapri lens are unaffected. */
+.media-card .gallery-audio-player { display:none !important; }
+@media (max-width: 480px) {
+  .media-card .thumb.audio-thumb:has(audio) {
+    height: 116px !important;
+    min-height: 116px !important;
+  }
+}
