@@ -5,6 +5,7 @@
 - **실험 사이트:** https://fffdsaw.github.io/fromm-viewer-preview/
 - **실험용 저장소:** `fffdsaw/fromm-viewer-preview`
 - **검증 대상 소스:** 운영 저장소 `fffdsaw/fromm-viewer` 의 PR #123, 고정 커밋 `1c7bb5019180d37549abb6b12cfc09c729de1dc5`
+- **플레이어 시각 복원:** 갤러리 음성·소형 영상은 이전 브라우저 기본 컨트롤 사용. 음성 전용 썸네일 높이를 축소합니다. Replay·Channel·LIVE 전문 재생 기능은 그대로 유지합니다.
 - **설치 확인:** 사이트의 `/pr123-build.json`에서 `sourceCommit` 및 `previewWorkflowCommit`을 검증합니다.
 - **배포:** 실험용 저장소 `main`에 푸시하면 `.github/workflows/pages-preview.yml`이 합성 데이터 기반 테스트 후 GitHub Pages에 게시합니다.
 - **복구용 체크포인트:** `backup/pr121-preview-before-pr123-20261115` 브랜치. 운영 저장소의 `main`과는 무관합니다.
