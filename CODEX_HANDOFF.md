@@ -1,3 +1,14 @@
+# 2026-11-15 — Fix preview audio Playwright timeout at login gate
+
+- User showed failed GitHub Pages workflow with Playwright `TimeoutError` and repeated `waiting 500ms`, with the next `Run PR` regression step skipped.
+- Source `index.html` mounts `#loginGate` as `position:fixed; z-index:2000` while unauthenticated. Previously `test/pr123-storage-isolation.browser.cjs` appended a sample audio `.media-card` to the end of `document.body` without z-index/visible positioning. It could be covered by the login overlay and non-scrollable `.login-screen`.
+- The preview test now positions only its **synthetic sample** as a fixed viewport-visible card above the login gate; production/app UI is untouched. It checks `document.elementFromPoint` for all real controls and logs each Playwright input step. This preserves genuine pointer interaction coverage instead of using programmatic DOM clicks or weakening assertions.
+- The gallery audio implementation `overrides/pr123-gallery-audio-controls.js` and its CSS are unchanged. Existing storage isolation, actual synthetic WAV play/pause/mute/seek/speed tests remain.
+- Merge applies only to preview `fffdsaw/fromm-viewer-preview`; source `fffdsaw/fromm-viewer` PR #123 and production main, optical PR #124/#125, existing preview data and backups are unchanged.
+- **Check the new Pages Actions run and live `pr123-build.json` before declaring deployment success.** If a later step fails, the new smoke logs identify the interaction.
+
+---
+
 # 2026-11-15 — Audio gallery now uses video-style bottom controls (requested visual follow-up)
 
 - The user provided two real screenshots: native gray centered audio bar (undesired) and native video thumbnail with bottom-overlay controls (target). Implement the audio gallery to visually follow the latter without tampering with the media engine, download buttons, or other sections.

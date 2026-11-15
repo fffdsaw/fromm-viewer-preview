@@ -117,7 +117,10 @@ async function seedV1(page, name, content) {
       const fixture = document.createElement('article');
       fixture.className = 'media-card';
       fixture.id = 'gav-test-card';
-      fixture.style.width = '320px';
+      // The unauthenticated PWA overlays #loginGate and suppresses document
+      // scrolling. Place synthetic controls above it so trusted Playwright
+      // clicks exercise the actual user-visible hit targets.
+      fixture.style.cssText = 'position:fixed;top:74px;left:12px;width:320px;max-width:calc(100vw - 24px);z-index:2147483640';
       fixture.innerHTML = '<div class="thumb audio-thumb media-ready"><div class="audio-icon">🎧</div><div class="audio-player-overlay"><audio controls preload="none"></audio></div></div><div class="thumb"><video controls preload="none"></video></div>';
       document.body.appendChild(fixture);
       const audio = fixture.querySelector('audio'), video = fixture.querySelector('video');
@@ -135,7 +138,12 @@ async function seedV1(page, name, content) {
         iconHidden: getComputedStyle(fixture.querySelector('.audio-icon')).display === 'none',
         nativeAudioHidden: getComputedStyle(audio).display === 'none',
         rowBottom: outer.bottom - rowBounds.bottom,
-        seekBottom: outer.bottom - seekBounds.bottom
+        seekBottom: outer.bottom - seekBounds.bottom,
+        pointerTargets: Object.fromEntries(['.gav-play','.gav-mute','.gav-more','.gav-seek'].map(selector => {
+          const el = fixture.querySelector(selector), rect = el.getBoundingClientRect();
+          const hit = document.elementFromPoint(rect.left + rect.width / 2,rect.top + rect.height / 2);
+          return [selector, !!hit && (hit === el || el.contains(hit))];
+        }))
       };
     });
     assert.equal(audioLayout.audioControls, false, 'gallery audio has controllable video-like overlay');
@@ -149,6 +157,8 @@ async function seedV1(page, name, content) {
       'play/time/volume row sits near bottom like native video: ' + JSON.stringify(audioLayout));
     assert.ok(audioLayout.seekBottom >= 0 && audioLayout.seekBottom < 28,
       'scrubber sits at the bottom of the card: ' + JSON.stringify(audioLayout));
+    assert.ok(Object.values(audioLayout.pointerTargets).every(Boolean),
+      'pointer interaction must reach real audio controls above login overlay: ' + JSON.stringify(audioLayout));
 
     // Synthetic local WAV: exercise real HTMLAudioElement control events without
     // contacting Fromm or using a personal account or message.
@@ -166,16 +176,20 @@ async function seedV1(page, name, content) {
       const audio = document.querySelector('#gav-test-card audio');
       audio.src = URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));
     });
+    console.log('PR123 audio smoke: clicking play on fixed visible fixture');
     await page.locator('#gav-test-card .gav-play').click();
     await page.waitForFunction(() => {
       const audio = document.querySelector('#gav-test-card audio');
       return !audio.paused && Number.isFinite(audio.duration) && audio.duration > 3;
     }, null, { timeout: 8000 });
     assert.equal(await page.locator('#gav-test-card .gav-play').getAttribute('aria-label'), '음성 일시정지');
+    console.log('PR123 audio smoke: clicking mute');
     await page.locator('#gav-test-card .gav-mute').click();
     assert.equal(await page.locator('#gav-test-card audio').evaluate(el => el.muted), true);
+    console.log('PR123 audio smoke: opening audio settings');
     await page.locator('#gav-test-card .gav-more').click();
     assert.equal(await page.locator('#gav-test-card .gav-settings').evaluate(el => el.open), true);
+    console.log('PR123 audio smoke: selecting playback speed');
     await page.locator('#gav-test-card .gav-rate').selectOption('1.25');
     assert.equal(await page.locator('#gav-test-card audio').evaluate(el => el.playbackRate), 1.25);
     await page.locator('#gav-test-card .gav-seek').evaluate(seek => {
@@ -183,6 +197,7 @@ async function seedV1(page, name, content) {
       seek.dispatchEvent(new Event('input',{bubbles:true}));
     });
     assert.ok(await page.locator('#gav-test-card audio').evaluate(el => el.currentTime >= 0.9), 'audio seek is functional');
+    console.log('PR123 audio smoke: clicking pause');
     await page.locator('#gav-test-card .gav-play').click();
     assert.equal(await page.locator('#gav-test-card audio').evaluate(el => el.paused), true);
     await page.locator('#gav-test-card audio').evaluate(el => {
