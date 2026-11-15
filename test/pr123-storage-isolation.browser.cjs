@@ -7,7 +7,7 @@ const http = require('node:http');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const root = path.resolve(process.env.PR121_SITE_ROOT || path.join(__dirname, '../../_site'));
+const root = path.resolve(process.env.PR123_SITE_ROOT || path.join(__dirname, '../../_site'));
 const contentTypes = {
   '.css': 'text/css', '.html': 'text/html', '.js': 'text/javascript',
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml',
