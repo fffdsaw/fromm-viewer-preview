@@ -2,7 +2,7 @@ name: Deploy Fromm Viewer Preview
 
 on:
   push:
-    branches: [main, codex/pr121-preview]
+    branches: [codex/pr121-preview]
   workflow_dispatch:
 
 permissions:
@@ -16,58 +16,48 @@ concurrency:
 
 jobs:
   deploy:
-    name: "Build and deploy PR #121 test site"
+    name: Build and deploy isolated PR #123 integration preview
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://fffdsaw.github.io/fromm-viewer-preview/
     steps:
-      - name: Checkout fixed PR #121 source
+      - name: Checkout verified PR #123 source (never production main)
         uses: actions/checkout@v4
         with:
           repository: fffdsaw/fromm-viewer
-          ref: 5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1
+          ref: 1c7bb5019180d37549abb6b12cfc09c729de1dc5
           persist-credentials: false
           path: upstream
 
-      - name: Checkout preview deployment configuration
+      - name: Checkout independent preview scripts and storage wrapper
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: preview
 
-      - name: Assemble PR-only site with isolated browser storage
+      - name: Assemble PR #123 preview with isolated browser state
         shell: bash
         run: |
           set -euo pipefail
-          python3 preview/scripts/build-pr121-preview.py upstream _site "$GITHUB_SHA"
-
-          test -f _site/index.html
-          test -f _site/preview-storage.js
-          test -f _site/pr121-preview-banner.js
-          test -f _site/pr121-search-nav.css
-          test -f _site/pr121-audio-glass.css
-          node --check _site/web-conversation.js
-          node --check _site/web-conversation-core.js
-          node --check _site/web-glass-controls.js
-          node --check _site/web-pwa.js
-          node --check _site/sw.js
-          node --check _site/preview-storage.js
-          node --check _site/pr121-preview-banner.js
+          python3 preview/scripts/build-pr123-preview.py upstream _site "$GITHUB_SHA"
+          python3 -m json.tool _site/pr123-build.json >/dev/null
           python3 -m json.tool _site/manifest.webmanifest >/dev/null
-          python3 -m json.tool _site/pr121-build.json >/dev/null
-          grep -q "fromm-preview-conversations-v1" _site/web-conversation-core.js
-          grep -q "fromm-viewer-preview/sw.js" _site/web-pwa.js
-          grep -q "scope: '/fromm-viewer-preview/'" _site/web-pwa.js
-          grep -q "fromm-viewer-preview-public-art-" _site/sw.js
-          grep -q "5609ede9f5d8c503244d5eba0e0d9e4fe76e13f1" _site/pr121-build.json
-          grep -q "pr121-search-nav.css" _site/index.html
-          grep -q "#chatMatchPrev,#chatMatchNext" _site/web-glass-controls.js
-          grep -q "chat-audio-play,.chat-sound-download')?60" _site/web-glass-controls.js
-          ! grep -q "glass-on-image.*chat-audio-play" _site/web-glass-controls.js
-          ! grep -q "preview-chat.js" _site/index.html
+          grep -q '1c7bb5019180d37549abb6b12cfc09c729de1dc5' _site/pr123-build.json
+          grep -q 'fromm-preview-conversations-v1' _site/web-conversation-core.js
+          grep -q 'fromm-viewer-preview/' _site/web-pwa.js
+          grep -q 'fromm-viewer-preview-public-art-' _site/sw.js
+          grep -q 'preview-storage.js?v=' _site/index.html
+          grep -q 'pr123-preview-banner.js?v=' _site/index.html
+          for asset in compact-player.css settings-panel.css themes.css web-compact-player.js web-themes.js web-glass.js web-glass-controls.js web-glass-settings.js web-chat-audio.js; do
+            test -f "_site/$asset"
+          done
+          for js in _site/web-conversation.js _site/web-conversation-core.js _site/web-compact-player.js _site/web-themes.js _site/web-glass-controls.js _site/web-glass.js _site/web-pwa.js _site/sw.js _site/preview-storage.js _site/pr123-preview-banner.js; do
+            node --check "$js"
+          done
 
-      - name: Install synthetic browser test tooling
+      - name: Install isolated Playwright browser tooling
         shell: bash
         run: |
           set -euo pipefail
@@ -75,42 +65,56 @@ jobs:
           npm install --no-save --package-lock=false playwright@1.62.1 axe-core@4.14.0
           npx playwright install --with-deps chromium
 
-      - name: Test preview storage boundaries and v1 to v2 migration
-        shell: bash
-        run: PR121_SITE_ROOT="$PWD/_site" node preview/test/pr121-storage-isolation.browser.cjs
-
-      - name: Test voice glass appearance before hover and pointer exit
-        shell: bash
-        run: PR121_SITE_ROOT="$PWD/_site" node preview/test/pr121-voice-glass.browser.cjs
-
-      - name: Test PR #121 unit and browser regressions on assembled site
+      - name: Test preview storage isolation, migration, worker, new assets
         shell: bash
         run: |
           set -euo pipefail
-          # Existing upstream tests serve their checkout root. Populate that temporary
-          # runner checkout with the exact assembled deployment before exercising it.
-          cp -a _site/. upstream/
-          node --test upstream/test/conversation.test.cjs upstream/test/unread.test.cjs
+          PR123_SITE_ROOT="$PWD/_site" node preview/test/pr123-storage-isolation.browser.cjs
+
+      - name: Run PR #123 regressions against pinned original checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test upstream/test/*.test.cjs
           export NODE_PATH="$PWD/preview/node_modules"
-          node upstream/test/conversation-state.browser.cjs
-          node upstream/test/conversation-cache-restore.browser.cjs
-          node upstream/test/conversation-cache-conflicts.browser.cjs
-          node upstream/test/conversation-storage-recovery.browser.cjs
-          node upstream/test/chat-history-progressive.browser.cjs
-          node upstream/test/chat-history-scale.browser.cjs
-          node upstream/test/reply-anchor-context.browser.cjs
-          node upstream/test/reply-start-top.browser.cjs
-          node upstream/test/my-replies.browser.cjs
-          node upstream/test/search-calendar-panel.browser.cjs
+          node upstream/test/settings-themes.browser.cjs
+          node upstream/test/uiux-cards-sidebar.browser.cjs
+          node upstream/test/conversation-refresh-cache.browser.cjs
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload PR #121 test artifact
+      - name: Upload preview artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
-      - name: Deploy PR #121 test site
+      - name: Deploy isolated PR #123 preview
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published preview version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, time, urllib.request
+          import os
+          url = 'https://fffdsaw.github.io/fromm-viewer-preview/pr123-build.json'
+          wanted = '1c7bb5019180d37549abb6b12cfc09c729de1dc5'
+          last = None
+          for attempt in range(12):
+              try:
+                  request = urllib.request.Request(url + '?check=' + str(time.time()), headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(request, timeout=20) as response:
+                      data = json.load(response)
+                  if data.get('sourceCommit') == wanted and data.get('previewWorkflowCommit') == os.environ['GITHUB_SHA']:
+                      print('Published PR #123 preview matches pinned source and workflow SHA')
+                      break
+                  last = 'unexpected published revision: ' + repr(data)
+              except Exception as exc:
+                  last = str(exc)
+              time.sleep(5)
+          else:
+              raise SystemExit('Preview deploy could not be confirmed: ' + str(last))
+          PY
