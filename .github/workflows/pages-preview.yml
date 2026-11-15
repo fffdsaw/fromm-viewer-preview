@@ -53,10 +53,10 @@ jobs:
           grep -q 'fromm-viewer-preview-public-art-' _site/sw.js
           grep -q 'preview-storage.js?v=' _site/index.html
           grep -q 'pr123-preview-banner.js?v=' _site/index.html
-          for asset in compact-player.css settings-panel.css themes.css web-compact-player.js web-themes.js web-glass.js web-glass-controls.js web-glass-settings.js web-chat-audio.js; do
+          for asset in compact-player.css settings-panel.css themes.css web-compact-player.js web-themes.js web-glass.js web-glass-controls.js web-glass-settings.js web-chat-audio.js pr123-legacy-media.css pr123-gallery-audio-controls.js; do
             test -f "_site/$asset"
           done
-          for js in _site/web-conversation.js _site/web-conversation-core.js _site/web-compact-player.js _site/web-themes.js _site/web-glass-controls.js _site/web-glass.js _site/web-pwa.js _site/sw.js _site/preview-storage.js _site/pr123-preview-banner.js; do
+          for js in _site/web-conversation.js _site/web-conversation-core.js _site/web-compact-player.js _site/web-themes.js _site/web-glass-controls.js _site/web-glass.js _site/web-pwa.js _site/sw.js _site/preview-storage.js _site/pr123-preview-banner.js _site/pr123-gallery-audio-controls.js; do
             node --check "$js"
           done
 

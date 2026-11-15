@@ -99,41 +99,97 @@ async function seedV1(page, name, content) {
     assert.equal(build.storageNamespace, 'fromm.preview.v1::');
     assert.equal(build.indexedDB, 'fromm-preview-conversations-v1');
     assert.equal(build.containsExperimentalOptics124or125, false);
-    assert.equal(build.galleryPlayerMode, 'legacy-native', 'gallery player rollback active');
+    assert.equal(build.galleryPlayerMode, 'video-style-audio-native-video', 'audio gallery controls match video while videos remain native');
     assert.ok((await page.locator('link[href*="themes.css"]').count()) > 0, 'theme stylesheet linked');
     assert.ok((await page.locator('link[href*="settings-panel.css"]').count()) > 0, 'settings stylesheet linked');
     assert.ok((await page.locator('link[href*="compact-player.css"]').count()) > 0, 'compact player linked');
     assert.ok((await page.locator('script[src*="web-themes.js"]').count()) > 0, 'theme controller linked');
     assert.equal(await page.locator('script[src*="web-compact-player.js"]').count(), 0, 'gallery video keeps original browser controls');
-    assert.ok((await page.locator('link[href*="pr123-legacy-media.css"]').count()) > 0, 'native gallery audio styles linked');
-    for (const file of ['themes.css', 'settings-panel.css', 'compact-player.css', 'web-themes.js', 'web-compact-player.js', 'pr123-legacy-media.css']) {
+    assert.ok((await page.locator('link[href*="pr123-legacy-media.css"]').count()) > 0, 'gallery audio bottom overlay stylesheet linked');
+    assert.ok((await page.locator('script[src*="pr123-gallery-audio-controls.js"]').count()) > 0, 'gallery audio overlay controller linked');
+    assert.ok(await page.evaluate(() => typeof window.FrommGalleryAudioControls?.enhance === 'function'), 'video-style audio enhancer is available');
+    for (const file of ['themes.css', 'settings-panel.css', 'compact-player.css', 'web-themes.js', 'web-compact-player.js', 'pr123-legacy-media.css', 'pr123-gallery-audio-controls.js']) {
       const response = await page.request.get(new URL(file, server.url).href);
       assert.equal(response.status(), 200, file + ' included in deployed build');
     }
 
-    const legacyCard = await page.evaluate(() => {
+    const audioLayout = await page.evaluate(() => {
       const fixture = document.createElement('article');
       fixture.className = 'media-card';
+      fixture.id = 'gav-test-card';
       fixture.style.width = '320px';
       fixture.innerHTML = '<div class="thumb audio-thumb media-ready"><div class="audio-icon">🎧</div><div class="audio-player-overlay"><audio controls preload="none"></audio></div></div><div class="thumb"><video controls preload="none"></video></div>';
       document.body.appendChild(fixture);
-      const audio = fixture.querySelector('audio');
-      const video = fixture.querySelector('video');
+      const audio = fixture.querySelector('audio'), video = fixture.querySelector('video');
+      window.FrommGalleryAudioControls.enhance(audio);
       const thumb = fixture.querySelector('.audio-thumb');
-      const layout = { audioControls: audio.controls, videoControls: video.controls,
-        audioHeight: thumb.getBoundingClientRect().height,
+      const row = fixture.querySelector('.gav-row');
+      const seek = fixture.querySelector('.gav-seek');
+      const outer = thumb.getBoundingClientRect();
+      const rowBounds = row.getBoundingClientRect(), seekBounds = seek.getBoundingClientRect();
+      return {
+        audioControls: audio.controls, videoControls: video.controls,
+        audioHeight: outer.height, width: outer.width,
+        hasVideoStyleOverlay: !!fixture.querySelector('.gav-controls'),
+        hasDownloadOutside: !thumb.querySelector('.card-download'),
         iconHidden: getComputedStyle(fixture.querySelector('.audio-icon')).display === 'none',
-        nativeAudioVisible: getComputedStyle(audio).display !== 'none',
+        nativeAudioHidden: getComputedStyle(audio).display === 'none',
+        rowBottom: outer.bottom - rowBounds.bottom,
+        seekBottom: outer.bottom - seekBounds.bottom
       };
-      fixture.remove();
-      return layout;
     });
-    assert.equal(legacyCard.audioControls, true, 'browser native audio controls retained');
-    assert.equal(legacyCard.videoControls, true, 'browser native video controls retained');
-    assert.ok(legacyCard.audioHeight >= 100 && legacyCard.audioHeight <= 180,
-      'audio-only card must not keep the large video thumbnail ratio: ' + JSON.stringify(legacyCard));
-    assert.equal(legacyCard.iconHidden, true, 'decorative headphone icon not stacked with native controls');
-    assert.equal(legacyCard.nativeAudioVisible, true, 'native audio controls are visible');
+    assert.equal(audioLayout.audioControls, false, 'gallery audio has controllable video-like overlay');
+    assert.equal(audioLayout.videoControls, true, 'gallery videos still use native Chrome controls');
+    assert.equal(audioLayout.hasVideoStyleOverlay, true, 'custom audio toolbar mounts');
+    assert.equal(audioLayout.iconHidden, true);
+    assert.equal(audioLayout.nativeAudioHidden, true, 'no duplicate native audio pill');
+    assert.ok(Math.abs(audioLayout.audioHeight - audioLayout.width / 1.45) < 12,
+      'audio thumb shares the video gallery card ratio: ' + JSON.stringify(audioLayout));
+    assert.ok(audioLayout.rowBottom > 8 && audioLayout.rowBottom < 70,
+      'play/time/volume row sits near bottom like native video: ' + JSON.stringify(audioLayout));
+    assert.ok(audioLayout.seekBottom >= 0 && audioLayout.seekBottom < 28,
+      'scrubber sits at the bottom of the card: ' + JSON.stringify(audioLayout));
+
+    // Synthetic local WAV: exercise real HTMLAudioElement control events without
+    // contacting Fromm or using a personal account or message.
+    await page.evaluate(() => {
+      const sampleRate = 8000, count = sampleRate * 4;
+      const bytes = new ArrayBuffer(44 + count * 2), view = new DataView(bytes);
+      const put = (offset, string) => {
+        for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+      };
+      put(0,'RIFF');view.setUint32(4,36 + count * 2,true);put(8,'WAVE');put(12,'fmt ');
+      view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);
+      view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*2,true);
+      view.setUint16(32,2,true);view.setUint16(34,16,true);
+      put(36,'data');view.setUint32(40,count*2,true);
+      const audio = document.querySelector('#gav-test-card audio');
+      audio.src = URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));
+    });
+    await page.locator('#gav-test-card .gav-play').click();
+    await page.waitForFunction(() => {
+      const audio = document.querySelector('#gav-test-card audio');
+      return !audio.paused && Number.isFinite(audio.duration) && audio.duration > 3;
+    }, null, { timeout: 8000 });
+    assert.equal(await page.locator('#gav-test-card .gav-play').getAttribute('aria-label'), '음성 일시정지');
+    await page.locator('#gav-test-card .gav-mute').click();
+    assert.equal(await page.locator('#gav-test-card audio').evaluate(el => el.muted), true);
+    await page.locator('#gav-test-card .gav-more').click();
+    assert.equal(await page.locator('#gav-test-card .gav-settings').evaluate(el => el.open), true);
+    await page.locator('#gav-test-card .gav-rate').selectOption('1.25');
+    assert.equal(await page.locator('#gav-test-card audio').evaluate(el => el.playbackRate), 1.25);
+    await page.locator('#gav-test-card .gav-seek').evaluate(seek => {
+      seek.value = '1';
+      seek.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    assert.ok(await page.locator('#gav-test-card audio').evaluate(el => el.currentTime >= 0.9), 'audio seek is functional');
+    await page.locator('#gav-test-card .gav-play').click();
+    assert.equal(await page.locator('#gav-test-card audio').evaluate(el => el.paused), true);
+    await page.locator('#gav-test-card audio').evaluate(el => {
+      el.pause();
+      URL.revokeObjectURL(el.src);
+    });
+    await page.locator('#gav-test-card').evaluate(el => el.remove());
 
     const localStorageResult = await page.evaluate(() => {
       localStorage.setItem('pr123-synthetic-probe', 'preview-value');
