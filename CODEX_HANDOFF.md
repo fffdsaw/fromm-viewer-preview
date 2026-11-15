@@ -1,3 +1,15 @@
+# 2026-11-15 — Preview legacy gallery player rollback (user visual review)
+
+- User reported PR #123 gallery audio thumbnails were disproportionate and the revamped small-card player looked worse than the prior version. This rollback restores the **native browser** audio/video controls **only for gallery cards**, and reduces the audio-only thumb to 116–172px rather than reserving a video-size 1.45:1 stage.
+- Preview-only development branch: `codex/pr123-restore-legacy-media-20261115`. Source remains pinned at `fffdsaw/fromm-viewer` PR #123 `1c7bb5019180d37549abb6b12cfc09c729de1dc5`.
+- New `overrides/pr123-legacy-media.css` + targeted build-time transforms in `scripts/build-pr123-preview.py` remove the compact video module inclusion and skip `FrommChatAudio.enhance(a,{gallery:true})` in gallery. **All-conversation voice players, real Meapri glass, cache/scroll, downloads/selection, settings/themes remain untouched.**
+- Replay/Channel/LIVE specialized players are **not** reverted to native controls: those already existed before the 13-item changes, and removing them would risk losing quality selection, PiP, rotation and stream logic. A separate visual reference/explicit scope is needed before changing that inherited design.
+- `test/pr123-storage-isolation.browser.cjs` checks updated build metadata, absent compact controller script, legacy stylesheet, native audio/video controls and bounded gallery audio geometry. Existing storage and Service Worker isolation assertions are unchanged.
+- The preview repository's original PR #121 version remains backed up at `backup/pr121-preview-before-pr123-20261115`. Production `fffdsaw/fromm-viewer` main and PR #123, PR #124/#125, private data, and credentials are not modified.
+- Deployment outcome must be verified from GitHub Actions and the public `pr123-build.json`; do not claim browser or real-account verification until observed.
+
+---
+
 # Fromm Viewer Preview — PR #123 isolated integration (2026-11-15)
 
 ## Current scope and safety
