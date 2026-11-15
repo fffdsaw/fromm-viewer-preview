@@ -2,7 +2,7 @@ name: Deploy Fromm Viewer Preview
 
 on:
   push:
-    branches: [codex/pr121-preview]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
