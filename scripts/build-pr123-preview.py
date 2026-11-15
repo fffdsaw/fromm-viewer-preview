@@ -127,5 +127,6 @@ for filename in required:
     "previewPath": "/fromm-viewer-preview/",
     "storageNamespace": STORAGE_PREFIX,
     "indexedDB": "fromm-preview-conversations-v1",
-    "containsExperimentalOptics124or125": False,\n    "galleryPlayerMode": "legacy-native",
+    "containsExperimentalOptics124or125": False,
+    "galleryPlayerMode": "legacy-native",
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
