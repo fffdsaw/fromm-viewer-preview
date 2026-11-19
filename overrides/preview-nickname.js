@@ -96,6 +96,32 @@
     return original.call(this,displayed===message.content?message:{...message,content:displayed},...args);
   };
 
+
+  // Keep quoted replies and chat searching consistent with the displayed text.
+  const originalQuote=window.quotedPreview;
+  if(typeof originalQuote==='function'){
+    window.quotedPreview=function(quoted,...args){
+      if(isArtistText(quoted)&&nickRequested(quoted)){
+        const displayed=format(quoted,nickFor(quoted));
+        if(displayed!==quoted.content)return displayed;
+      }
+      return originalQuote.call(this,quoted,...args);
+    };
+  }
+  const originalMatch=window.chatMessageMatches;
+  if(typeof originalMatch==='function'){
+    window.chatMessageMatches=function(message,query,...args){
+      if(originalMatch.call(this,message,query,...args))return true;
+      const q=String(query||'').trim().toLocaleLowerCase();
+      if(!q)return false;
+      if(isArtistText(message)&&nickRequested(message)){
+        const displayed=format(message,nickFor(message));
+        if(displayed!==message.content&&displayed.toLocaleLowerCase().includes(q))return true;
+      }
+      return false;
+    };
+  }
+
   window.FrommPreviewNickname=Object.freeze({
     format,
     nickFor,
