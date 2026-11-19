@@ -9,7 +9,7 @@ const source=fs.readFileSync(path.join(__dirname,'../overrides/preview-nickname.
 function mount(room={id:'room-a',nick:'명근'},site='/fromm-viewer-preview/'){
   const apiCalls=[],rendered=[];
   const state={room,messages:[],infiniteList:[],filter:'all',chatQuery:''};
-  const window={renderMessage:msg=>{rendered.push(msg);return msg;}};
+  const window={renderMessage:msg=>{rendered.push(msg);return msg;},quotedPreview:q=>q.content||'',chatMessageMatches:(m,q)=>String(m.content||'').includes(q)};
   const nodes=[];
   const document={querySelectorAll:()=>nodes};
   const request=async url=>{apiCalls.push(url);return {data:{fanChatRoom:{nick:'애칭'}}};};
@@ -65,4 +65,15 @@ test('detail nickname fetched once per room and updates text in place',async()=>
   assert.equal(el.innerHTML,'애칭반가워');
   assert.equal(message.content,'반가워');
   assert.equal(window.renderMessage(message).content,'애칭반가워');
+});
+
+test('quoted replies and searches use the same nickname without changing message data',()=>{
+  const {window}=mount();
+  const quoted={userType:'star',type:'text',hasNick:true,content:'@@@ 반가워'};
+  const original={userType:'star',type:'text',hasNick:true,content:'이시원섭섭아쉽'};
+  assert.equal(window.quotedPreview(quoted),'명근 반가워');
+  assert.equal(window.chatMessageMatches(original,'명근'),true);
+  assert.equal(window.chatMessageMatches(original,'없는문구'),false);
+  assert.equal(quoted.content,'@@@ 반가워');
+  assert.equal(original.content,'이시원섭섭아쉽');
 });
