@@ -1,3 +1,18 @@
+# Fromm Viewer · Artist 실험용 (2026-11-19)
+
+- 운영 웹 저장소 `fffdsaw/fromm-viewer`의 커밋 `a21ced8d34bab7b4d3d7662babb106cbd144cad3`를 **읽기 전용으로 복사하여** 실험용 사이트를 빌드합니다. 운영 저장소에 코드를 쓰거나 병합하지 않습니다.
+- 실험 주소: https://fffdsaw.github.io/fromm-viewer-preview/
+- 보호용 이전 실험 웹 백업 브랜치: `backup/preview-before-main-copy-artist-20261119`
+- 실험에 추가한 파일: `overrides/preview-artist.js`, `overrides/preview-artist.css`, `overrides/preview-artist-banner.js`, `test/artist-preview.browser.cjs`.
+- 채널 `전체·영상·사진` 모핑 메뉴에 `Artist`를 추가하고, `Artist` 선택 시 오른쪽에 `전체 멤버` 필터를 조건부 표시합니다.
+- **데이터 한계:** 공식 Artist 전용 목록 API는 확인되지 않았습니다. 현재 실험 기능은 기존 채널 **사진 게시물 중 응답에 명시적인 `artistId/memberId/artist` 필드가 있는 항목만** Artist로 분류하며, 출처가 불분명한 사진이나 영상을 임의 분류하지 않습니다. 공식 Artist 전용 목록과 완전한 멤버별 목록은 **미구현·실계정 미검증**입니다.
+- 기존 실험용 IndexedDB(`fromm-preview-conversations-v1`), 접두사(`fromm.preview.v1::`), PWA/Service Worker 범위를 유지합니다. 개인 계정 정보·토큰은 GitHub에 기록하지 않습니다.
+- 새 소스의 갤러리·재생·다운로드 기능은 운영 웹과 동일하게 복사하고, 더 이상 PR #123 갤러리 조작 오버라이드를 적용하지 않습니다.
+
+---
+
+## 이전 PR #123 실험 기록 (보관)
+
 # Fromm Viewer · 실험용 웹 (PR #123 통합 개선)
 
 운영 웹 **https://fffdsaw.github.io/fromm-viewer/** 과 독립된 GitHub Pages 실험용 사이트입니다.
