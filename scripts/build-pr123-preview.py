@@ -29,7 +29,7 @@ for pattern in ("index.html", "*.js", "*.css", "*.webmanifest", ".nojekyll"):
         shutil.copy2(source, site / source.name)
 for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
-for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js"):
+for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js", "preview-nickname.js"):
     shutil.copy2(preview / "overrides" / filename, site / filename)
 
 def replace_exact(value, old, new, why):
@@ -56,6 +56,9 @@ html = replace_exact(html, "</head>",
 html = replace_exact(html, "</body>",
                      f'<script src="preview-artist.js?v={version}"></script>\n</body>',
                      "preview Artist controller")
+html = replace_exact(html, "</body>",
+                     f'<script src="preview-nickname.js?v={version}"></script>\n</body>',
+                     "preview fan nickname renderer")
 html_path.write_text(html, encoding="utf-8")
 
 manifest_path = site / "manifest.webmanifest"
@@ -109,7 +112,7 @@ required = ("index.html", "web-compact-player.js", "compact-player.css",
             "web-glass-controls.js", "web-glass-settings.js",
             "web-chat-audio.js", "web-pwa.js", "sw.js",
             "preview-storage.js", "preview-artist-banner.js", "preview-artist.css",
-            "preview-artist.js", "web-channel-photos.js", "web-morph-menu.js")
+            "preview-artist.js", "preview-nickname.js", "web-channel-photos.js", "web-morph-menu.js")
 for filename in required:
     if not (site / filename).is_file():
         raise AssertionError(f"required PR #123 preview asset missing: {filename}")
@@ -125,4 +128,5 @@ for filename in required:
     "containsExperimentalOptics124or125": False,
     "galleryPlayerMode": "copied-current-source-unchanged",
     "previewArtist": "attributed-channel-image-filter",
+    "previewNickname": "hasNick-and-marker-room-scoped",
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
