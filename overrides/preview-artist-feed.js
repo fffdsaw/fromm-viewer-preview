@@ -58,13 +58,18 @@ function feedUrl(response){
   }
   return '';
 }
+// Keep a short-lived result isolated by the current viewer account as well as artist.
+function sourceKey(info){
+  const account=typeof currentAccountScope==='function'?currentAccountScope():'preview-session';
+  return account+':'+info.channel+':'+info.id;
+}
 function clearScope(){
   previousScope='';
   for(const controller of pending.values())controller.abort();
   pending.clear();
 }
 async function resolve(info){
-  const key=info.channel+':'+info.id;
+  const key=sourceKey(info);
   if(cache.has(key))return cache.get(key);
   if(pending.has(key))return null;
   if(typeof frommApiRequest!=='function'||typeof FROMM_CHANNEL_API_BASE!=='string'){
@@ -106,7 +111,7 @@ function renderNote(){
     if(note.textContent!==message)note.textContent=message;
     return;
   }
-  const scope=info.channel+':'+info.id;
+  const scope=sourceKey(info);
   if(scope!==previousScope){
     previousScope=scope;
     // Do not fetch until selected Artist category and authenticated room context exist.
@@ -119,7 +124,7 @@ function paint(){
   if(!node||!enabled())return;
   const info=candidate();
   if(!info)return;
-  const record=cache.get(info.channel+':'+info.id);
+  const record=cache.get(sourceKey(info));
   const text={
     'no-client':'공식 Artist 피드 연결 도구를 초기화할 수 없습니다.',
     'no-feed-url':'공식 Artist 피드 주소가 응답에 없거나 안전하게 확인되지 않았습니다.',
@@ -152,7 +157,7 @@ function paint(){
 function tick(){
   if(!enabled()){document.getElementById('fromm-preview-artist-feed-note')?.remove();previousScope='';return;}
   const current=candidate();
-  const scope=current?current.channel+':'+current.id:'';
+  const scope=current?sourceKey(current):'';
   if(previousScope&&scope!==previousScope)previousScope='';
   renderNote();
 }
