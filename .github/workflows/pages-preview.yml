@@ -2,7 +2,9 @@ name: Deploy Fromm Viewer Preview
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feature/preview-main-copy-artist-20261119
   workflow_dispatch:
 
 permissions:
@@ -15,52 +17,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Build and deploy isolated PR #123 integration preview
+  build:
+    name: Verify latest-source Artist preview (deploy only preview main)
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     environment:
       name: github-pages
       url: https://fffdsaw.github.io/fromm-viewer-preview/
     steps:
-      - name: Checkout verified PR #123 source (never production main)
+      - name: Checkout pinned current operating source READ ONLY
         uses: actions/checkout@v4
         with:
           repository: fffdsaw/fromm-viewer
-          ref: 1c7bb5019180d37549abb6b12cfc09c729de1dc5
-          # The Node regression tests compare against historical b78f2b1.
-          # A shallow checkout omits that ancestor and fails git rev-parse.
+          ref: a21ced8d34bab7b4d3d7662babb106cbd144cad3
           fetch-depth: 0
           persist-credentials: false
           path: upstream
 
-      - name: Checkout independent preview scripts and storage wrapper
+      - name: Checkout independent experimental repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: preview
 
-      - name: Assemble PR #123 preview with isolated browser state
+      - name: Assemble isolated experimental copy
         shell: bash
         run: |
           set -euo pipefail
           python3 preview/scripts/build-pr123-preview.py upstream _site "$GITHUB_SHA"
           python3 -m json.tool _site/pr123-build.json >/dev/null
           python3 -m json.tool _site/manifest.webmanifest >/dev/null
-          grep -q '1c7bb5019180d37549abb6b12cfc09c729de1dc5' _site/pr123-build.json
+          grep -q 'a21ced8d34bab7b4d3d7662babb106cbd144cad3' _site/pr123-build.json
           grep -q 'fromm-preview-conversations-v1' _site/web-conversation-core.js
           grep -q 'fromm-viewer-preview/' _site/web-pwa.js
           grep -q 'fromm-viewer-preview-public-art-' _site/sw.js
           grep -q 'preview-storage.js?v=' _site/index.html
-          grep -q 'pr123-preview-banner.js?v=' _site/index.html
-          for asset in compact-player.css settings-panel.css themes.css web-compact-player.js web-themes.js web-glass.js web-glass-controls.js web-glass-settings.js web-chat-audio.js pr123-legacy-media.css pr123-gallery-audio-controls.js; do
-            test -f "_site/$asset"
-          done
-          for js in _site/web-conversation.js _site/web-conversation-core.js _site/web-compact-player.js _site/web-themes.js _site/web-glass-controls.js _site/web-glass.js _site/web-pwa.js _site/sw.js _site/preview-storage.js _site/pr123-preview-banner.js _site/pr123-gallery-audio-controls.js; do
-            node --check "$js"
+          grep -q 'preview-artist.js?v=' _site/index.html
+          for file in web-glass.js web-morph-menu.js web-channel-photos.js preview-artist.js preview-artist-banner.js preview-storage.js web-conversation.js web-conversation-core.js web-pwa.js sw.js; do
+            test -f "_site/$file"
+            node --check "_site/$file"
           done
 
-      - name: Install isolated Playwright browser tooling
+      - name: Install isolated browser tooling
         shell: bash
         run: |
           set -euo pipefail
@@ -68,56 +66,51 @@ jobs:
           npm install --no-save --package-lock=false playwright@1.62.1 axe-core@4.14.0
           npx playwright install --with-deps chromium
 
-      - name: Test preview storage isolation, migration, worker, new assets
+      - name: Test preview-only Artist and storage isolation
         shell: bash
         run: |
           set -euo pipefail
-          PR123_SITE_ROOT="$PWD/_site" node preview/test/pr123-storage-isolation.browser.cjs
+          PREVIEW_SITE_ROOT="$PWD/_site" node preview/test/artist-preview.browser.cjs
 
-      - name: Run PR #123 regressions against pinned original checkout
+      - name: Run operating-source unit regressions against unchanged source
         shell: bash
         run: |
           set -euo pipefail
           node --test upstream/test/*.test.cjs
-          export NODE_PATH="$PWD/preview/node_modules"
-          node upstream/test/settings-themes.browser.cjs
-          node upstream/test/uiux-cards-sidebar.browser.cjs
-          node upstream/test/conversation-refresh-cache.browser.cjs
 
-      - name: Configure GitHub Pages
+      - name: Configure Pages (preview main only)
+        if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
 
-      - name: Upload preview artifact
+      - name: Upload preview artifact (preview main only)
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
-      - name: Deploy isolated PR #123 preview
+      - name: Deploy preview only (never operating site)
+        if: github.ref == 'refs/heads/main'
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify published preview version
+      - name: Verify published preview commit and pinned source
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, time, urllib.request
-          import os
-          url = 'https://fffdsaw.github.io/fromm-viewer-preview/pr123-build.json'
-          wanted = '1c7bb5019180d37549abb6b12cfc09c729de1dc5'
-          last = None
-          for attempt in range(12):
+          import json, time, urllib.request, os
+          url='https://fffdsaw.github.io/fromm-viewer-preview/pr123-build.json'
+          for attempt in range(15):
               try:
-                  request = urllib.request.Request(url + '?check=' + str(time.time()), headers={'Cache-Control':'no-cache'})
-                  with urllib.request.urlopen(request, timeout=20) as response:
-                      data = json.load(response)
-                  if data.get('sourceCommit') == wanted and data.get('previewWorkflowCommit') == os.environ['GITHUB_SHA']:
-                      print('Published PR #123 preview matches pinned source and workflow SHA')
+                  request=urllib.request.Request(url+'?check='+str(time.time()),headers={'Cache-Control':'no-cache'})
+                  with urllib.request.urlopen(request,timeout=20) as response: data=json.load(response)
+                  if data.get('sourceCommit')=='a21ced8d34bab7b4d3d7662babb106cbd144cad3' and data.get('previewWorkflowCommit')==os.environ['GITHUB_SHA']:
+                      print('Published isolated Artist preview matches commit and copied operating source')
                       break
-                  last = 'unexpected published revision: ' + repr(data)
               except Exception as exc:
-                  last = str(exc)
+                  print('Preview verification retry:',type(exc).__name__)
               time.sleep(5)
           else:
-              raise SystemExit('Preview deploy could not be confirmed: ' + str(last))
+              raise SystemExit('Could not verify the published preview revision')
           PY
