@@ -9,7 +9,7 @@ import json
 import shutil
 import sys
 
-SOURCE_SHA = "1c7bb5019180d37549abb6b12cfc09c729de1dc5"
+SOURCE_SHA = "a21ced8d34bab7b4d3d7662babb106cbd144cad3"
 STORAGE_PREFIX = "fromm.preview.v1::"
 
 if len(sys.argv) != 4:
@@ -29,7 +29,7 @@ for pattern in ("index.html", "*.js", "*.css", "*.webmanifest", ".nojekyll"):
         shutil.copy2(source, site / source.name)
 for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
-for filename in ("preview-storage.js", "pr123-preview-banner.js", "pr123-legacy-media.css", "pr123-gallery-audio-controls.js"):
+for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js"):
     shutil.copy2(preview / "overrides" / filename, site / filename)
 
 def replace_exact(value, old, new, why):
@@ -40,37 +40,30 @@ def replace_exact(value, old, new, why):
 html_path = site / "index.html"
 html = html_path.read_text(encoding="utf-8")
 html = replace_exact(html, "<title>Fromm Viewer</title>",
-                     "<title>Fromm Viewer · 실험용 · PR #123</title>", "title")
+                     "<title>Fromm Viewer · 실험용 · Artist</title>", "title")
 charset = '<meta charset="utf-8" />'
 html = replace_exact(html, charset, charset + "\n"
                      + f'<script src="preview-storage.js?v={version}"></script>',
                      "early storage isolation")
 html = replace_exact(html, "</body>",
-                     f'<script src="pr123-preview-banner.js?v={version}"></script>\n</body>',
+                     f'<script src="preview-artist-banner.js?v={version}"></script>\n</body>',
                      "preview badge")
-# Keep the historical native browser players for gallery audio/video instead of
-# mounting the PR #123 compact controller and oversized waveform player.
-# Expanded Replay/Channel/LIVE are specialized streaming UIs; do not remove
-# quality selection, PiP or stream handling.
-html = replace_exact(html, '<script src="web-compact-player.js?v=stable-glass-glyph-20261115"></script>',
-                     '<!-- Legacy gallery video controls restored in preview -->',
-                     "remove compact video override")
-html = replace_exact(html, 'window.FrommChatAudio?.enhance(a,{gallery:true});',
-                     'window.FrommGalleryAudioControls?.enhance(a);', "video-style gallery audio overlay")
-html = replace_exact(html, 'thumb?.classList.add("audio-player-ready");',
-                     '// Preview native audio keeps the normal thumb state.', "native gallery audio thumb")
+# Keep copied current production UI and gallery controls unchanged.
+# Only the preview feature and storage isolation are appended.
 html = replace_exact(html, "</head>",
-                     f'<link rel="stylesheet" href="pr123-legacy-media.css?v={version}">\n'
-                     f'<script src="pr123-gallery-audio-controls.js?v={version}"></script>\n</head>',
-                     "audio-card overlay stylesheet and controller")
+                     f'<link rel="stylesheet" href="preview-artist.css?v={version}">\n</head>',
+                     "preview Artist styles")
+html = replace_exact(html, "</body>",
+                     f'<script src="preview-artist.js?v={version}"></script>\n</body>',
+                     "preview Artist controller")
 html_path.write_text(html, encoding="utf-8")
 
 manifest_path = site / "manifest.webmanifest"
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 manifest.update({
     "id": "/fromm-viewer-preview/",
-    "name": "Fromm Viewer 실험용 · PR #123",
-    "short_name": "실험용 PR #123",
+    "name": "Fromm Viewer 실험용 · Artist",
+    "short_name": "실험용 Artist",
     "start_url": "/fromm-viewer-preview/",
     "scope": "/fromm-viewer-preview/",
 })
@@ -115,14 +108,14 @@ required = ("index.html", "web-compact-player.js", "compact-player.css",
             "web-themes.js", "themes.css", "settings-panel.css",
             "web-glass-controls.js", "web-glass-settings.js",
             "web-chat-audio.js", "web-pwa.js", "sw.js",
-            "preview-storage.js", "pr123-preview-banner.js", "pr123-legacy-media.css",
-            "pr123-gallery-audio-controls.js")
+            "preview-storage.js", "preview-artist-banner.js", "preview-artist.css",
+            "preview-artist.js", "web-channel-photos.js", "web-morph-menu.js")
 for filename in required:
     if not (site / filename).is_file():
         raise AssertionError(f"required PR #123 preview asset missing: {filename}")
 
 (site / "pr123-build.json").write_text(json.dumps({
-    "purpose": "13-item PR #123 visual and account test (not production)",
+    "purpose": "Current operating source copied for isolated Artist preview (not production)",
     "sourceRepository": "fffdsaw/fromm-viewer",
     "sourceCommit": SOURCE_SHA,
     "previewWorkflowCommit": workflow_sha,
@@ -130,5 +123,6 @@ for filename in required:
     "storageNamespace": STORAGE_PREFIX,
     "indexedDB": "fromm-preview-conversations-v1",
     "containsExperimentalOptics124or125": False,
-    "galleryPlayerMode": "video-style-audio-native-video",
+    "galleryPlayerMode": "copied-current-source-unchanged",
+    "previewArtist": "attributed-channel-image-filter",
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
