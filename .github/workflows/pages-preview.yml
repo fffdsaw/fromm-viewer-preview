@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/preview-main-copy-artist-20261119
+      - feature/preview-artist-official-feed-20261120
   workflow_dispatch:
 
 permissions:
