@@ -26,7 +26,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
    window.__rawPreviewTestGet=Storage.prototype.getItem.bind(localStorage);
   });
   const page=await context.newPage();
-  await page.route('**/*',route=>new URL(route.request().url).origin===new URL(base).origin?route.continue():route.abort());
+  await page.route('**/*',route=>new URL(route.request().url()).origin===new URL(base).origin?route.continue():route.abort());
   await page.goto(base,{waitUntil:'load'});
   assert.equal(await page.title(),'Fromm Viewer · 실험용 · Artist');
   assert.equal(await page.locator('#fromm-preview-artist-banner').textContent(),'실험용 · Artist');
