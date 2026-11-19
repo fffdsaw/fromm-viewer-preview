@@ -41,11 +41,13 @@
    const trigger=document.querySelector('.channel-list-shell [data-channel-content-menu]');
    if(!trigger)return;
    const label=LABELS[category]||LABELS.all;
-   if(category==='artist'||trigger.textContent.trim().replace(/[^가-힣A-Za-z]/g,'')!==label){
-     // Preserve the original arrow SVG instead of rebuilding the main UI.
-     const text=trigger.firstChild;
-     if(text?.nodeType===Node.TEXT_NODE)text.textContent=label+' ';
-   }
+   // The upstream renderer still uses its underlying media type. Do not
+   // let subsequent "사진" renders replace the independent Artist selection.
+   const text=trigger.firstChild;
+   if(text?.nodeType===Node.TEXT_NODE&&text.textContent!==label+' ')text.textContent=label+' ';
+   if(trigger.dataset.previewArtistCategory!==category)trigger.dataset.previewArtistCategory=category;
+   const accessibleLabel='채널 콘텐츠: '+label;
+   if(trigger.getAttribute('aria-label')!==accessibleLabel)trigger.setAttribute('aria-label',accessibleLabel);
    let memberButton=document.querySelector('[data-preview-artist-member]');
    const host=trigger.closest('.channel-media-tabs');
    if(category==='artist'&&host){
@@ -83,14 +85,15 @@
    const next=Object.hasOwn(LABELS,value)?value:'all',changed=category!==next;
    category=next;
    if(next!=='artist')member='';
-   if(next==='artist'){
-     if(channelVideoState.mediaType!=='image')await selectChannelMediaType('image');
+   // The verified Channel backend accepts all/video/image; Artist is a
+   // distinct preview category, not another user-visible name for photo.
+   const underlyingType=next==='artist'?'image':next;
+   try{
+     if(channelVideoState.mediaType!==underlyingType)await selectChannelMediaType(underlyingType);
      else if(changed)refresh();
-   }else{
-     if(channelVideoState.mediaType!==next)await selectChannelMediaType(next);
-     else if(changed)refresh();
+   }finally{
+     update();
    }
-   update();
  }
  function menu(trigger,items,onSelect,label){
    const morph=window.FrommMorphMenus;
@@ -116,6 +119,15 @@
      member=value;refresh();
    },'Artist 멤버 선택');
  }
+ // Select preview items in capture phase rather than relying on the upstream
+ // morph menu's delayed callback; its owner/trigger can change before onclick.
+ document.addEventListener('click',event=>{
+   const item=event.target.closest?.('[data-morph-value]');
+   if(!item||!item.closest('.morph-menu-content[aria-label="채널 콘텐츠 선택"]')||!channelActive())return;
+   event.preventDefault();event.stopImmediatePropagation();
+   window.FrommMorphMenus?.close?.(true,true);
+   void choose(item.dataset.morphValue).catch(update);
+ },true);
  document.addEventListener('click',event=>{
    const trigger=event.target.closest?.('[data-channel-content-menu],[data-preview-artist-member]');
    if(!trigger||!channelActive())return;
@@ -135,7 +147,7 @@
    const timeline=document.querySelector('#timeline');
    if(!timeline)return;
    observer=new MutationObserver(update);
-   observer.observe(timeline,{childList:true,subtree:true});
+   observer.observe(timeline,{childList:true,characterData:true,subtree:true});
    update();
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();

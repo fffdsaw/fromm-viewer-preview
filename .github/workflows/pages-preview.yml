@@ -64,6 +64,12 @@ jobs:
           set -euo pipefail
           node --test preview/test/preview-artist-feed.test.cjs
 
+      - name: Verify preview Artist filter selection independent of photo backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test preview/test/preview-artist-filter.test.cjs
+
       - name: Test preview fan nickname formatting and original data preservation
         shell: bash
         run: |
