@@ -1,3 +1,14 @@
+## 2026-11-20: Artist 공식 피드 주소 연결 실험
+
+- 최신 Android APK `base.apk` 정적 분석에서 `GET /channels/arti`와 `channelFeedUrl`을 확인함.
+- **프리뷰 전용** `preview-artist-feed.js`에서 아티스트 ID가 확인된 선택 채팅방에 한해, 기존 인증된 API 클라이언트로 공식 피드 주소 조회를 시도함.
+- 주소는 `https://*.frommyarti.com`에서만 열 수 있도록 제한. 토큰·응답 원문을 기록하거나 지속 저장하지 않음.
+- `Artist` 선택 시 확인된 공식 피드를 여는 링크와 상태를 안내함. 기존 채널 사진/영상과 Artist 업로더 정보 분류는 유지.
+- **아직 해결되지 않은 부분:** `channelFeedUrl` 웹페이지의 Artist 게시물 목록 조회 API와 작성자 식별 필드는 확인되지 않았음. 따라서 프리뷰 웹의 자체 앨범/플레이어에 **공식 Artist 피드 사진·영상이 직접 표시되는 단계는 아님**.
+- 읽기 전용 원본 저장소 `fffdsaw/fromm-viewer`의 코드는 수정하지 않음.
+
+---
+
 # Fromm Viewer · Artist 실험용 (2026-11-19)
 
 - 운영 웹 저장소 `fffdsaw/fromm-viewer`의 커밋 `a21ced8d34bab7b4d3d7662babb106cbd144cad3`를 **읽기 전용으로 복사하여** 실험용 사이트를 빌드합니다. 운영 저장소에 코드를 쓰거나 병합하지 않습니다.

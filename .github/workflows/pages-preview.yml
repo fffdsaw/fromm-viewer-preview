@@ -53,10 +53,16 @@ jobs:
           grep -q 'fromm-viewer-preview-public-art-' _site/sw.js
           grep -q 'preview-storage.js?v=' _site/index.html
           grep -q 'preview-artist.js?v=' _site/index.html
-          for file in web-glass.js web-morph-menu.js web-channel-photos.js preview-artist.js preview-nickname.js preview-artist-banner.js preview-storage.js web-conversation.js web-conversation-core.js web-pwa.js sw.js; do
+          for file in web-glass.js web-morph-menu.js web-channel-photos.js preview-artist.js preview-artist-feed.js preview-nickname.js preview-artist-banner.js preview-storage.js web-conversation.js web-conversation-core.js web-pwa.js sw.js; do
             test -f "_site/$file"
             node --check "_site/$file"
           done
+
+      - name: Verify Artist feed source parsing without any live API requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test preview/test/preview-artist-feed.test.cjs
 
       - name: Test preview fan nickname formatting and original data preservation
         shell: bash
