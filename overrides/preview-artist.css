@@ -1,0 +1,15 @@
+/* Only the preview Channel's extra Artist member trigger.
+   The opened panel uses the existing Meapri MorphMenus module. */
+.channel-media-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.channel-media-tabs .preview-artist-member{
+  flex:none;max-width:min(200px,50vw);min-height:36px;
+  padding:7px 14px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--theme-line) 70%,white);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--theme-card) 93%,white),var(--theme-soft));
+  color:var(--theme-text);font:inherit;font-size:13px;font-weight:650;
+  box-shadow:inset 0 1px 1px #fff8,inset 0 -2px 3px #214f3820,0 3px 9px #1a463018;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;
+}
+.channel-media-tabs .preview-artist-member:focus-visible{outline:2px solid var(--theme-accent);outline-offset:2px}
+@media(max-width:700px){.channel-media-tabs .preview-artist-member{min-height:40px;max-width:min(190px,48vw)}}
+@media(forced-colors:active){.channel-media-tabs .preview-artist-member{background:ButtonFace;color:ButtonText;border-color:ButtonText}}

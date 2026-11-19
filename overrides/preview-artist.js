@@ -1,0 +1,148 @@
+/* Preview-only Artist filter experiment. It never modifies the source repository.
+ * The current Channel photo feed is the only verified data source: do not
+ * invent an Artist API, infer ownership from filenames or show fake members. */
+(()=>{'use strict';
+ if(!location.pathname.startsWith('/fromm-viewer-preview/'))return;
+ let category='all',member='',lastChannel='',observer=null;
+ const LABELS={all:'전체',video:'영상',image:'사진',artist:'Artist'};
+ const channelActive=()=>typeof state!=='undefined'&&state.filter==='live'&&state.live.centerMode==='channel'&&!channelVideoState.selected;
+ const channelPosts=()=>{const page=typeof channelVideoPage==='function'?channelVideoPage():null;return Array.isArray(page?.posts)?page.posts:[];};
+ function attribution(post){
+   if(!post||post.type!=='image')return null;
+   const person=post.artist&&typeof post.artist==='object'?post.artist:null;
+   const identifier=person?.id??post.artistId??post.memberId;
+   const name=person?.nick||person?.name||post.artistName||post.memberName||'';
+   // Only explicit member/artist fields count; generic authors may be channel staff.
+   if(identifier==null&&!String(name).trim())return null;
+   const id=identifier!=null?String(identifier):'name:'+String(name).trim();
+   return {id,name:String(name).trim()||'아티스트'};
+ }
+ function collectMembers(posts=channelPosts()){
+   const map=new Map();
+   for(const p of posts){const a=attribution(p);if(a&&!map.has(a.id))map.set(a.id,a);}
+   return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+ }
+ function filterPosts(posts){
+   if(category!=='artist')return posts;
+   return posts.filter(p=>{const a=attribution(p);return a&&(!member||a.id===member);});
+ }
+ const originalVisible=window.visibleChannelPosts;
+ if(typeof originalVisible==='function'){
+   window.visibleChannelPosts=function(...args){return filterPosts(originalVisible.apply(this,args));};
+ }
+ function syncScope(){
+   if(!channelActive())return;
+   const id=String(channelVideoState.channelId||'');
+   if(lastChannel!==id){member='';lastChannel=id;}
+ }
+ function update(){
+   if(!channelActive())return;
+   syncScope();
+   const trigger=document.querySelector('.channel-list-shell [data-channel-content-menu]');
+   if(!trigger)return;
+   const label=LABELS[category]||LABELS.all;
+   if(category==='artist'||trigger.textContent.trim().replace(/[^가-힣A-Za-z]/g,'')!==label){
+     // Preserve the original arrow SVG instead of rebuilding the main UI.
+     const text=trigger.firstChild;
+     if(text?.nodeType===Node.TEXT_NODE)text.textContent=label+' ';
+   }
+   let memberButton=document.querySelector('[data-preview-artist-member]');
+   const host=trigger.closest('.channel-media-tabs');
+   if(category==='artist'&&host){
+     if(!memberButton){
+       memberButton=document.createElement('button');
+       memberButton.type='button';memberButton.className='btn channel-content-trigger preview-artist-member';
+       memberButton.dataset.previewArtistMember='';
+       memberButton.setAttribute('aria-haspopup','menu');
+       memberButton.setAttribute('aria-expanded','false');
+       host.append(memberButton);
+     }
+     const selected=collectMembers().find(m=>m.id===member);
+     const text=selected?.name||'전체 멤버';
+     if(memberButton.dataset.label!==text){
+       memberButton.dataset.label=text;
+       memberButton.replaceChildren(document.createTextNode(text+' ▾'));
+     }
+   }else memberButton?.remove();
+   const count=document.querySelector('.channel-list-shell .replay-count');
+   if(count&&category==='artist'){
+     const n=filterPosts(channelPosts()).length;
+     const message='Artist '+n+'개';
+     if(count.textContent!==message)count.textContent=message;
+   }
+   const empty=document.querySelector('.channel-list-shell .replay-empty');
+   if(empty&&category==='artist'&&!channelVideoState.loading){
+     const message=collectMembers().length
+       ?'해당 멤버의 사진 게시물이 없습니다.'
+       :'현재 채널 응답에서는 Artist 업로더 정보를 확인하지 못했습니다. 공식 Artist 전용 목록 연결은 검증이 필요합니다.';
+     if(empty.textContent!==message)empty.textContent=message;
+   }
+ }
+ function refresh(){if(channelActive()&&typeof renderLiveView==='function')renderLiveView();queueMicrotask(update);}
+ async function choose(value){
+   const next=Object.hasOwn(LABELS,value)?value:'all',changed=category!==next;
+   category=next;
+   if(next!=='artist')member='';
+   if(next==='artist'){
+     if(channelVideoState.mediaType!=='image')await selectChannelMediaType('image');
+     else if(changed)refresh();
+   }else{
+     if(channelVideoState.mediaType!==next)await selectChannelMediaType(next);
+     else if(changed)refresh();
+   }
+   update();
+ }
+ function menu(trigger,items,onSelect,label){
+   const morph=window.FrommMorphMenus;
+   if(morph?.open){
+     void morph.open(trigger,{items,onSelect,label});
+     return;
+   }
+   // Fallback if the optional optics module failed: functional native select.
+   const native=document.createElement('select');
+   native.className='preview-artist-native';
+   native.setAttribute('aria-label',label);
+   for(const option of items){const o=document.createElement('option');o.value=option.value;o.textContent=option.label;o.selected=!!option.selected;native.append(o);}
+   const rect=trigger.getBoundingClientRect();
+   native.style.cssText='position:fixed;z-index:2147483000;left:'+Math.max(8,Math.min(rect.left,innerWidth-190))+'px;top:'+Math.min(rect.bottom+6,innerHeight-50)+'px';
+   document.body.append(native);native.focus();native.onchange=()=>{void onSelect(native.value);native.remove();};native.onblur=()=>native.remove();
+ }
+ function openCategory(trigger){
+   menu(trigger,['all','video','image','artist'].map(value=>({value,label:LABELS[value],selected:category===value})),choose,'채널 콘텐츠 선택');
+ }
+ function openMember(trigger){
+   const available=collectMembers();
+   menu(trigger,[{value:'',label:'전체 멤버',selected:!member},...available.map(a=>({value:a.id,label:a.name,selected:member===a.id}))],value=>{
+     member=value;refresh();
+   },'Artist 멤버 선택');
+ }
+ document.addEventListener('click',event=>{
+   const trigger=event.target.closest?.('[data-channel-content-menu],[data-preview-artist-member]');
+   if(!trigger||!channelActive())return;
+   event.preventDefault();event.stopPropagation();
+   if(trigger.hasAttribute('data-preview-artist-member'))openMember(trigger);
+   else openCategory(trigger);
+ },true);
+ document.addEventListener('keydown',event=>{
+   if(!['ArrowDown','ArrowUp'].includes(event.key))return;
+   const trigger=event.target.closest?.('[data-channel-content-menu],[data-preview-artist-member]');
+   if(!trigger||!channelActive())return;
+   event.preventDefault();event.stopPropagation();
+   if(trigger.hasAttribute('data-preview-artist-member'))openMember(trigger);
+   else openCategory(trigger);
+ },true);
+ const boot=()=>{
+   const timeline=document.querySelector('#timeline');
+   if(!timeline)return;
+   observer=new MutationObserver(update);
+   observer.observe(timeline,{childList:true,subtree:true});
+   update();
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+ window.addEventListener('pagehide',()=>observer?.disconnect());
+ window.FrommPreviewArtist=Object.freeze({
+   attribution,collectMembers,filterPosts,
+   get state(){return {category,member,channel:lastChannel};},
+   choose
+ });
+})();
