@@ -30,6 +30,19 @@ test('only confirmed artist ID can be used and channel mismatch is rejected',()=
  assert.equal(api.candidate({host:{nick:'no verified artist id'},channelId:'group-a'},'group-a'),null);
 });
 
+test('selected member cannot show a different chat artist feed',()=>{
+ const app=mount({room:{host:{id:'member-1',nick:'멤버 1'},channelId:'group-a'}});
+ app.window.FrommPreviewArtist.state.member='member-2';
+ assert.equal(app.window.FrommPreviewArtistFeed.candidate(),null);
+ app.state.rooms=[
+   {host:{id:'member-1',nick:'멤버 1'},channelId:'group-a'},
+   {host:{id:'member-2',nick:'멤버 2'},channelId:'group-a'}
+ ];
+ assert.deepEqual(app.window.FrommPreviewArtistFeed.candidate(),{
+   id:'member-2',name:'멤버 2',channel:'group-a'
+ });
+});
+
 test('source accepts only verified https frommyarti domains',()=>{
  const f=mount().window.FrommPreviewArtistFeed.safeUrl;
  assert.equal(f('https://channel.frommyarti.com/feed/1'),'https://channel.frommyarti.com/feed/1');
