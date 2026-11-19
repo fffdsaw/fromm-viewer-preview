@@ -18,6 +18,14 @@ function enabled(){
     &&window.FrommPreviewArtist.state.category==='artist';
 }
 function candidate(room=state?.room,selectedChannel=channelId()){
+  // A selected member must never open the previously selected chat artist's feed.
+  const selectedMember=window.FrommPreviewArtist?.state?.member||'';
+  if(selectedMember){
+    const rooms=Array.isArray(state?.rooms)?state.rooms:[];
+    const matching=rooms.find(r=>String(r?.host?.artiId??r?.host?.id??r?.artiId??'')===selectedMember);
+    if(matching)room=matching;
+    else if(String(room?.host?.artiId??room?.host?.id??room?.artiId??'')!==selectedMember)return null;
+  }
   if(!room||!room.host)return null;
   const declared=room.channelId??room.host?.channelId??room.channel?.id??'';
   if(declared&&selectedChannel&&String(declared)!==selectedChannel)return null;
