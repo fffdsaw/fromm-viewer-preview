@@ -112,7 +112,56 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   assert.deepEqual(rendered.ids,['artist-photo','artist-video']);
   assert.equal(rendered.hasMemberControl,true);
 
-  for(const file of ['web-channel-photos.js','web-morph-menu.js','preview-artist.js','preview-artist.css','preview-artist-banner.js']){
+  // Preview-only visual regression: glass surfaces lose their palette tint,
+  // while the browser's backdrop sampling and menu animation remain available.
+  const neutral=await page.evaluate(()=>{
+    const root=document.documentElement;
+    const originalTheme=root.getAttribute('data-fromm-theme');
+    const previousGlow=root.classList.contains('glowme');
+    const previousPhase=root.classList.contains('glowme-phase3');
+    root.setAttribute('data-fromm-theme','glow');
+    root.classList.add('glowme','glowme-phase3');
+    const host=document.createElement('div');
+    host.innerHTML=[
+      '<div class="viewer-header"><button class="btn" type="button">헤더 토글</button>',
+      '<span class="fixed-glass-surface"></span></div>',
+      '<div class="channel-media-tabs"><button class="channel-content-trigger preview-artist-member">멤버</button></div>',
+      '<div class="morph-menu-skin"><div class="morph-menu-glass"></div></div>',
+      '<div class="morph-menu-content"></div>',
+      '<div class="morph-menu-skin morph-menu-vertical"></div>',
+      '<div class="morph-menu-content morph-menu-vertical"></div>'
+    ].join('');
+    document.body.append(host);
+    const styled=selector=>{
+      const style=getComputedStyle(host.querySelector(selector));
+      return {color:style.backgroundColor,filter:style.backdropFilter};
+    };
+    const result={
+      stylesheet:!!document.querySelector('link[href*="preview-neutral-glass.css"]'),
+      header:styled('.viewer-header button'),
+      fixed:styled('.fixed-glass-surface'),
+      member:styled('.preview-artist-member'),
+      morph:styled('.morph-menu-glass'),
+      vertical:styled('.morph-menu-skin.morph-menu-vertical')
+    };
+    host.remove();
+    if(originalTheme===null)root.removeAttribute('data-fromm-theme');
+    else root.setAttribute('data-fromm-theme',originalTheme);
+    if(!previousGlow)root.classList.remove('glowme');
+    if(!previousPhase)root.classList.remove('glowme-phase3');
+    return result;
+  });
+  const transparent=color=>color==='rgba(0, 0, 0, 0)'||color==='transparent';
+  assert.equal(neutral.stylesheet,true,'isolated neutral glass stylesheet is loaded');
+  for(const key of ['header','fixed','member','morph','vertical']){
+    assert.ok(transparent(neutral[key].color),key+' still has a palette background: '+neutral[key].color);
+  }
+  assert.match(neutral.header.filter,/blur\(1\.6px\)/);
+  assert.match(neutral.fixed.filter,/saturate\(1\)/);
+  const materialSource=await (await page.request.get(new URL('web-morph-menu.js',base).href)).text();
+  assert.match(materialSource,/saturation:100,tint:'rgba\(255,255,255,0\)'/);
+
+  for(const file of ['web-channel-photos.js','web-morph-menu.js','preview-artist.js','preview-artist.css','preview-neutral-glass.css','preview-artist-banner.js']){
    const r=await page.request.get(new URL(file,base).href);
    assert.equal(r.status(),200,file);
   }
