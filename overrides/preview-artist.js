@@ -99,8 +99,14 @@
  }
  function refresh(){if(channelActive()&&typeof renderLiveView==='function')renderLiveView();queueMicrotask(update);}
  async function choose(value){
-   const next=Object.hasOwn(LABELS,value)?value:'all',changed=category!==next;
+   const next=Object.hasOwn(LABELS,value)?value:'all',changed=category!==next,wasArtist=category==='artist';
    category=next;
+   if(wasArtist&&next!=='artist'){
+     window.FrommPreviewArtistPosts?.leave?.();
+     // Underlying mediaType remains "all"; invalidate the cached grid so
+     // original Channel cards return instead of retaining Artist DOM.
+     document.querySelector('#timeline > [data-video-list-scope]')?.removeAttribute('data-video-list-scope');
+   }
    if(next!=='artist')member='';
    // Request the verified mixed media feed for Artist. 'image' silently drops
    // every artist video, but 'artist' itself is not a supported API mediaType.
