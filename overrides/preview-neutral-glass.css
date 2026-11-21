@@ -7,7 +7,7 @@
   /* Header/collection toggle droplets are CSS glass, not the SDK lens.
      Neutralize the Glow/theme material overlay, including hover colors.
      The original clear rim and ::before white illumination remain intact. */
-  :root[data-fromm-theme].glowme.glowme-phase3
+  :root[data-fromm-theme].glowme.glowme-phase3:is(.pc-layout,:not(.pc-layout))
   :is(.viewer-header button,#mediaActionDock button,.channel-media-tabs .channel-content-trigger) {
     --droplet-tint: transparent !important;
     background-color: transparent !important;
@@ -15,7 +15,7 @@
     backdrop-filter: blur(1.6px) saturate(1) !important;
     -webkit-backdrop-filter: blur(1.6px) saturate(1) !important;
   }
-  :root[data-fromm-theme].glowme.glowme-phase3
+  :root[data-fromm-theme].glowme.glowme-phase3:is(.pc-layout,:not(.pc-layout))
   :is(.viewer-header button,#mediaActionDock button,.channel-media-tabs .channel-content-trigger):hover:not(:disabled) {
     background-color: transparent !important;
   }
