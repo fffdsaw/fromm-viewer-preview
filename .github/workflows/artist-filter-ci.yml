@@ -1,9 +1,6 @@
 name: Verify Preview Artist Filters
 
 on:
-  push:
-    branches:
-      - fix/artist-filter-mixed-media-20261121
   pull_request:
     branches:
       - main
@@ -16,6 +13,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: preview-artist-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
