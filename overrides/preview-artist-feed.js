@@ -12,6 +12,7 @@ function channelId(){
 }
 function enabled(){
   return !!window.FrommPreviewArtist
+    &&!window.FrommPreviewArtistPosts?.snapshot?.active
     &&state?.filter==='live'
     &&state.live?.centerMode==='channel'
     &&!channelVideoState?.selected

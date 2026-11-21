@@ -29,7 +29,7 @@ for pattern in ("index.html", "*.js", "*.css", "*.webmanifest", ".nojekyll"):
         shutil.copy2(source, site / source.name)
 for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
-for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js", "preview-nickname.js", "preview-artist-feed.css", "preview-artist-feed.js", "preview-neutral-glass.css"):
+for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js", "preview-nickname.js", "preview-artist-feed.css", "preview-artist-feed.js", "preview-neutral-glass.css", "preview-artist-posts.js", "preview-artist-posts.css"):
     shutil.copy2(preview / "overrides" / filename, site / filename)
 
 def replace_exact(value, old, new, why):
@@ -69,7 +69,7 @@ html = replace_exact(
 html = replace_exact(
     html,
     '  updateSelectedCount();\n  if (selected?._streamUrl && !s.playerError) {',
-    '  updateSelectedCount();\n  window.FrommPreviewArtist?.syncUI?.();\n  if (selected?._streamUrl && !s.playerError) {',
+    '  updateSelectedCount();\n  window.FrommPreviewArtist?.syncUI?.();\n  window.FrommPreviewArtistPosts?.sync?.();\n  if (selected?._streamUrl && !s.playerError) {',
     "preview Artist UI sync on Channel render")
 html = replace_exact(html, "<title>Fromm Viewer</title>",
                      "<title>Fromm Viewer · 실험용 · Artist</title>", "title")
@@ -97,6 +97,12 @@ html = replace_exact(html, "</head>",
 html = replace_exact(html, "</body>",
                      f'<script src="preview-artist-feed.js?v={version}"></script>\n</body>',
                      "preview Artist official-feed source discovery")
+html = replace_exact(html, "</head>",
+                     f'<link rel="stylesheet" href="preview-artist-posts.css?v={version}">\n</head>',
+                     "preview-only official Artist styles")
+html = replace_exact(html, "</body>",
+                     f'<script src="preview-artist-posts.js?v={version}"></script>\n</body>',
+                     "preview-only official Artist reader")
 # Loaded after all upstream theme/optics CSS and after preview Artist styles.
 html = replace_exact(html, "</head>",
                      f'<link rel="stylesheet" href="preview-neutral-glass.css?v={version}">\n</head>',
@@ -175,7 +181,7 @@ required = ("index.html", "web-compact-player.js", "compact-player.css",
             "web-glass-controls.js", "web-glass-settings.js",
             "web-chat-audio.js", "web-pwa.js", "sw.js",
             "preview-storage.js", "preview-artist-banner.js", "preview-artist.css",
-            "preview-artist.js", "preview-nickname.js", "preview-artist-feed.js", "preview-neutral-glass.css", "web-channel-photos.js", "web-morph-menu.js")
+            "preview-artist.js", "preview-nickname.js", "preview-artist-feed.js", "preview-artist-posts.js", "preview-artist-posts.css", "preview-neutral-glass.css", "web-channel-photos.js", "web-morph-menu.js")
 for filename in required:
     if not (site / filename).is_file():
         raise AssertionError(f"required PR #123 preview asset missing: {filename}")
@@ -193,5 +199,6 @@ for filename in required:
     "previewArtist": "attributed-channel-mixed-media-filter",
     "previewNickname": "hasNick-and-marker-room-scoped",
     "previewArtistFeed": "official-feed-url-discovery-only",
+    "previewOfficialArtistPosts": "read-only GET /posts first page; GET /posts/{id} detail; live auth unverified",
     "previewNeutralGlass": "header-toggles-and-morph-no-color-tint",
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

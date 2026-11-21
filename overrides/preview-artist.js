@@ -6,7 +6,11 @@
  let category='all',member='',lastChannel='',observer=null;
  const LABELS={all:'전체',video:'영상',image:'사진',artist:'Artist'};
  const channelActive=()=>typeof state!=='undefined'&&state.filter==='live'&&state.live.centerMode==='channel'&&!channelVideoState.selected;
- const channelPosts=()=>{const page=typeof channelVideoPage==='function'?channelVideoPage():null;return Array.isArray(page?.posts)?page.posts:[];};
+ const channelPosts=()=>{
+   if(window.FrommPreviewArtistPosts?.snapshot?.active)return window.FrommPreviewArtistPosts.memberPosts();
+   const page=typeof channelVideoPage==='function'?channelVideoPage():null;
+   return Array.isArray(page?.posts)?page.posts:[];
+ };
  function attribution(post){
    // Both uploaded photos and uploaded videos may carry explicit artist metadata.
    if(!post||!['image','video'].includes(post.type))return null;
@@ -80,13 +84,13 @@
      }
    }else memberButton?.remove();
    const count=document.querySelector('.channel-list-shell .replay-count');
-   if(count&&category==='artist'){
+   if(count&&category==='artist'&&!window.FrommPreviewArtistPosts?.snapshot?.active){
      const n=filterPosts(channelPosts()).length;
      const message='Artist '+n+'개';
      if(count.textContent!==message)count.textContent=message;
    }
    const empty=document.querySelector('.channel-list-shell .replay-empty');
-   if(empty&&category==='artist'&&!channelVideoState.loading){
+   if(empty&&category==='artist'&&!channelVideoState.loading&&!window.FrommPreviewArtistPosts?.snapshot?.active){
      const message=collectMembers().length
        ?'선택한 멤버가 올린 것으로 확인되는 사진·영상이 없습니다.'
        :'이 채널의 미디어 중 아티스트 작성자를 확인할 수 있는 사진·영상이 없습니다. 공식 Artist 피드 전체 목록은 아직 연결되지 않았습니다.';
@@ -95,8 +99,14 @@
  }
  function refresh(){if(channelActive()&&typeof renderLiveView==='function')renderLiveView();queueMicrotask(update);}
  async function choose(value){
-   const next=Object.hasOwn(LABELS,value)?value:'all',changed=category!==next;
+   const next=Object.hasOwn(LABELS,value)?value:'all',changed=category!==next,wasArtist=category==='artist';
    category=next;
+   if(wasArtist&&next!=='artist'){
+     window.FrommPreviewArtistPosts?.leave?.();
+     // Underlying mediaType remains "all"; invalidate the cached grid so
+     // original Channel cards return instead of retaining Artist DOM.
+     document.querySelector('#timeline > [data-video-list-scope]')?.removeAttribute('data-video-list-scope');
+   }
    if(next!=='artist')member='';
    // Request the verified mixed media feed for Artist. 'image' silently drops
    // every artist video, but 'artist' itself is not a supported API mediaType.

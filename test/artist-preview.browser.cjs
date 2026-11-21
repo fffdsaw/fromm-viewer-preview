@@ -76,6 +76,22 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
       id,type,title:id,displayStartAt:1730000000000,
       ...(artist?{artist:{id:'artist-a',name:'멤버 A'}}:{})
     });
+    window.__artistProbeCalls=[];
+    window.channelVideoSession=()=>()=>true;
+    window.currentAccountScope=()=> 'synthetic-artist-account';
+    window.frommApiRequest=async(route,options)=>{
+      window.__artistProbeCalls.push({route,channelId:options.channelId});
+      const mediaPost=(id,type,visible=true)=>({
+        id,mediaType:type,content:id,isVisible:visible,
+        author:{id:'artist-a',name:'멤버 A'},
+        media:[{mediaType:type,url:'https://channel-contents.frommyarti.com/'+id+(type==='image'?'.jpg':'.mp4')}]
+      });
+      const posts=[mediaPost('artist-photo','image'),
+        mediaPost('artist-video','video'),mediaPost('hidden','video',false)];
+      if(route==='/posts')return {data:{posts,isLast:true}};
+      if(route.startsWith('/posts/'))return {data:{post:posts.find(p=>p.id===route.slice('/posts/'.length))}};
+      throw new Error('Unexpected API in official Artist synthetic test: '+route);
+    };
     state.filter='live';state.live.centerMode='channel';
     state.live.channelsLoaded=true;
     state.live.channels=[{id:'test-channel',channelName:'테스트 채널'}];
@@ -91,19 +107,29 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
     });
     renderLiveView();
     await window.FrommPreviewArtist.choose('artist');
-    await Promise.resolve();
+    await window.FrommPreviewArtistPosts.reload();
+    for(let attempt=0;attempt<20&&window.FrommPreviewArtistPosts.snapshot.status==='loading';attempt++){
+      await new Promise(resolve=>setTimeout(resolve,20));
+    }
     const label=document.querySelector('[data-channel-content-menu]');
-    const cards=[...document.querySelectorAll('[data-channel-video-card]')];
+    const cards=[...document.querySelectorAll('[data-preview-artist-open]')];
     return {
       category:window.FrommPreviewArtist.state.category,
       mediaType:channelVideoState.mediaType,
       label:label?.textContent||'',
       aria:label?.getAttribute('aria-label')||'',
       count:document.querySelector('.replay-count')?.textContent||'',
-      ids:cards.map(c=>c.dataset.channelVideoCard).sort(),
+      allCounts:[...document.querySelectorAll('.replay-count')].map(el=>({
+        text:el.textContent,channel:!!el.closest('.channel-list-shell'),inTimeline:!!el.closest('#timeline')
+      })),
+      gridRevision:document.querySelector('.preview-artist-posts')?.dataset.previewArtistPosts||'',
+      ids:cards.map(c=>c.dataset.previewArtistOpen).sort(),
+      officialState:window.FrommPreviewArtistPosts.snapshot.status,
+      officialCalls:window.__artistProbeCalls,
       hasMemberControl:!!document.querySelector('[data-preview-artist-member]')
     };
   });
+  console.log('OFFICIAL_ARTIST_BROWSER',JSON.stringify(rendered));
   assert.equal(rendered.category,'artist');
   assert.equal(rendered.mediaType,'all');
   assert.match(rendered.label,/Artist/);
@@ -111,6 +137,25 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   assert.equal(rendered.count,'Artist 2개');
   assert.deepEqual(rendered.ids,['artist-photo','artist-video']);
   assert.equal(rendered.hasMemberControl,true);
+  assert.equal(rendered.officialState,'ready');
+  assert.ok(rendered.officialCalls.some(x=>x.route==='/posts'&&x.channelId==='test-channel'));
+  await page.locator('[data-preview-artist-open="artist-photo"]').dispatchEvent('click');
+  await page.locator('.preview-artist-post-dialog img').waitFor({state:'attached',timeout:3000});
+  assert.ok((await page.locator('.preview-artist-post-dialog img').getAttribute('src')).includes('artist-photo.jpg'));
+  await page.locator('.preview-artist-post-dialog button').first().dispatchEvent('click');
+  const returned=await page.evaluate(async()=>{
+    await window.FrommPreviewArtist.choose('all');
+    return {
+      category:window.FrommPreviewArtist.state.category,
+      source:window.FrommPreviewArtistPosts.snapshot.active,
+      ids:[...document.querySelectorAll('[data-channel-video-card]')].map(e=>e.dataset.channelVideoCard).sort(),
+      count:document.querySelector('.replay-count')?.textContent||''
+    };
+  });
+  assert.equal(returned.category,'all');
+  assert.equal(returned.source,false);
+  assert.deepEqual(returned.ids,['artist-photo','artist-video','channel-video']);
+  assert.equal(returned.count,'미디어 3개');
 
   // Preview-only visual regression: glass surfaces lose their palette tint,
   // while the browser's backdrop sampling and menu animation remain available.

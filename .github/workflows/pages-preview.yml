@@ -53,10 +53,11 @@ jobs:
           grep -q 'fromm-viewer-preview-public-art-' _site/sw.js
           grep -q 'preview-storage.js?v=' _site/index.html
           grep -q 'preview-artist.js?v=' _site/index.html
+          grep -q 'preview-artist-posts.js?v=' _site/index.html
           grep -q 'preview-neutral-glass.css?v=' _site/index.html
           grep -Fq "saturation:100,tint:'rgba(255,255,255,0)'" _site/web-morph-menu.js
           grep -Fq 'window.FrommPreviewArtist.filterPosts(posts)' _site/index.html
-          for file in web-glass.js web-morph-menu.js web-clear-controls.js web-channel-photos.js preview-artist.js preview-artist-feed.js preview-nickname.js preview-artist-banner.js preview-storage.js web-conversation.js web-conversation-core.js web-pwa.js sw.js; do
+          for file in web-glass.js web-morph-menu.js web-clear-controls.js web-channel-photos.js preview-artist.js preview-artist-feed.js preview-artist-posts.js preview-nickname.js preview-artist-banner.js preview-storage.js web-conversation.js web-conversation-core.js web-pwa.js sw.js; do
             test -f "_site/$file"
             node --check "_site/$file"
           done
@@ -72,6 +73,12 @@ jobs:
         run: |
           set -euo pipefail
           node --test preview/test/preview-artist-filter.test.cjs
+
+      - name: Verify preview-only official Artist read-only list and media schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test preview/test/preview-artist-posts.test.cjs
 
       - name: Verify untinted preview header and morphing glass material
         shell: bash
