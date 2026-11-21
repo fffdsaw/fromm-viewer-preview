@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/preview-main-copy-artist-20261119
+      - fix/artist-filter-mixed-media-20261121
   workflow_dispatch:
 
 permissions:
@@ -53,6 +54,7 @@ jobs:
           grep -q 'fromm-viewer-preview-public-art-' _site/sw.js
           grep -q 'preview-storage.js?v=' _site/index.html
           grep -q 'preview-artist.js?v=' _site/index.html
+          grep -Fq 'window.FrommPreviewArtist?.filterPosts(posts)' _site/index.html
           for file in web-glass.js web-morph-menu.js web-channel-photos.js preview-artist.js preview-artist-feed.js preview-nickname.js preview-artist-banner.js preview-storage.js web-conversation.js web-conversation-core.js web-pwa.js sw.js; do
             test -f "_site/$file"
             node --check "_site/$file"
