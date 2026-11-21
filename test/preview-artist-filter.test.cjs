@@ -74,20 +74,53 @@ test('Artist menu item is selected even when MorphMenus callback does not execut
   assert.equal(app.trigger.ariaLabel,'채널 콘텐츠: Artist');
   assert.equal(app.count.textContent,'Artist 0개');
   assert.match(app.empty.textContent,/Artist/);
-  assert.deepEqual(app.calls.slice(0,2),['close','render']);
+  assert.deepEqual(app.calls.slice(0,2),['close','all']);
 });
 
-test('upstream photo type does not overwrite Artist label, and normal types still work',async()=>{
+test('Artist uses mixed all-media feed without changing user-visible label',async()=>{
   const app=mount();
   await app.window.FrommPreviewArtist.choose('artist');
-  assert.equal(app.channelVideoState.mediaType,'image');
+  assert.equal(app.channelVideoState.mediaType,'all');
   assert.equal(app.label.textContent,'Artist ');
   await app.window.FrommPreviewArtist.choose('video');
   assert.equal(app.channelVideoState.mediaType,'video');
   assert.equal(app.label.textContent,'영상 ');
   await app.window.FrommPreviewArtist.choose('artist');
-  assert.equal(app.channelVideoState.mediaType,'image');
+  assert.equal(app.channelVideoState.mediaType,'all');
   assert.equal(app.label.textContent,'Artist ');
+});
+
+
+test('Artist includes explicitly attributed images and videos, never anonymous media',async()=>{
+  const app=mount();
+  const posts=[
+    {id:'p1',type:'image',artist:{id:'a1',name:'멤버 1'}},
+    {id:'p2',type:'video',artistId:'a2',artistName:'멤버 2'},
+    {id:'p3',type:'video',memberId:'a1'},
+    {id:'p4',type:'video',title:'채널 운영 영상'},
+    {id:'p5',type:'image',title:'작성자 미표시'},
+    {id:'p6',type:'sound',artistId:'a1'}
+  ];
+  assert.equal(app.window.FrommPreviewArtist.filterPosts(posts).length,6);
+  await app.window.FrommPreviewArtist.choose('artist');
+  assert.equal(app.channelVideoState.mediaType,'all');
+  assert.deepEqual(app.window.FrommPreviewArtist.filterPosts(posts).map(p=>p.id),['p1','p2','p3']);
+  assert.deepEqual(app.window.FrommPreviewArtist.collectMembers(posts).map(a=>a.id),['a1','a2']);
+  await app.window.FrommPreviewArtist.choose('all');
+  assert.equal(app.window.FrommPreviewArtist.filterPosts(posts).length,6);
+});
+
+test('unverified Artist list does not look like an empty photo category',async()=>{
+  const app=mount();
+  await app.window.FrommPreviewArtist.choose('artist');
+  assert.match(app.empty.textContent,/공식 Artist 피드 전체 목록은 아직 연결되지 않았습니다/);
+  assert.doesNotMatch(app.empty.textContent,/이 페이지에 업로드된 사진이 없습니다/);
+});
+
+test('preview builds integrate Artist filter into copied Channel renderer',()=>{
+  const build=fs.readFileSync(path.join(__dirname,'../scripts/build-pr123-preview.py'),'utf8');
+  assert.ok(build.includes('window.FrommPreviewArtist?.filterPosts'));
+  assert.ok(build.includes('channel_visible_original'));
 });
 
 test('preview filter is not installed on operating web path',()=>{
