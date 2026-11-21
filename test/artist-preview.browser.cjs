@@ -156,10 +156,10 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   for(const key of ['header','fixed','member','morph','vertical']){
     assert.ok(transparent(neutral[key].color),key+' still has a palette background: '+neutral[key].color);
   }
-  assert.match(neutral.header.filter,/blur\\(1\\.6px\\)/);
-  assert.match(neutral.fixed.filter,/saturate\\(1\\)/);
+  assert.match(neutral.header.filter,/blur\(1\.6px\)/);
+  assert.match(neutral.fixed.filter,/saturate\(1\)/);
   const materialSource=await (await page.request.get(new URL('web-morph-menu.js',base).href)).text();
-  assert.match(materialSource,/saturation:100,tint:'rgba\\(255,255,255,0\\)'/);
+  assert.match(materialSource,/saturation:100,tint:'rgba\(255,255,255,0\)'/);
 
   for(const file of ['web-channel-photos.js','web-morph-menu.js','preview-artist.js','preview-artist.css','preview-neutral-glass.css','preview-artist-banner.js']){
    const r=await page.request.get(new URL(file,base).href);
