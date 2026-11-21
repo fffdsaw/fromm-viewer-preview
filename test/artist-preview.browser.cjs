@@ -99,16 +99,11 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
       mediaType:channelVideoState.mediaType,
       label:label?.textContent||'',
       aria:label?.getAttribute('aria-label')||'',
-      count:document.querySelector('.channel-list-shell .replay-count')?.textContent||'',
+      count:document.querySelector('.replay-count')?.textContent||'',
       ids:cards.map(c=>c.dataset.channelVideoCard).sort(),
-      hasMemberControl:!!document.querySelector('[data-preview-artist-member]'),
-      mediaCountNodes:[...document.querySelectorAll('.replay-count')].map(x=>x.textContent),
-      currentMode:state.filter+' / '+state.live.centerMode,
-      shellCount:document.querySelectorAll('.channel-list-shell').length,
-      mediaTabHtml:document.querySelector('.channel-media-tabs')?.outerHTML.slice(0,800)||''
+      hasMemberControl:!!document.querySelector('[data-preview-artist-member]')
     };
   });
-  console.log('ARTIST_RENDER_DIAGNOSTIC',JSON.stringify(rendered));
   assert.equal(rendered.category,'artist');
   assert.equal(rendered.mediaType,'all');
   assert.match(rendered.label,/Artist/);
