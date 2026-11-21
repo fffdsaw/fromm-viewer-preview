@@ -68,8 +68,8 @@ html = replace_exact(
 # member control; the source renderer deliberately reuses the previous toolbar.
 html = replace_exact(
     html,
-    '  updateSelectedCount();\\n  if (selected?._streamUrl && !s.playerError) {',
-    '  updateSelectedCount();\\n  window.FrommPreviewArtist?.syncUI?.();\\n  if (selected?._streamUrl && !s.playerError) {',
+    '  updateSelectedCount();\n  if (selected?._streamUrl && !s.playerError) {',
+    '  updateSelectedCount();\n  window.FrommPreviewArtist?.syncUI?.();\n  if (selected?._streamUrl && !s.playerError) {',
     "preview Artist UI sync on Channel render")
 html = replace_exact(html, "<title>Fromm Viewer</title>",
                      "<title>Fromm Viewer · 실험용 · Artist</title>", "title")
