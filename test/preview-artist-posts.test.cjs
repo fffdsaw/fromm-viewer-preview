@@ -42,16 +42,17 @@ test('official Artist image/video normalized with explicit author and media',()=
  assert.equal(result.posts[1].media[0].runningTime,30);
 });
 
-test('locked, hidden, text-only, unauthored and bad URL items never enter grid',()=>{
+test('visible text posts are accepted while hidden, unauthored and bad URL items are filtered',()=>{
  const api=mount().window.FrommPreviewArtistPosts;
  const posts=[
   img,{...img,id:'hidden',isVisible:false},
-  {...img,id:'text',mediaType:'text',media:[]},
+  {...img,id:'text',mediaType:'text',content:'Artist의 새 글입니다.',media:[]},
   {...img,id:'unauthored',author:null},
   {...img,id:'badurl',media:[{mediaType:'image',url:'javascript:alert(1)'}]},
   {...img,id:'relative',media:[{mediaType:'image',url:'//attacker.example/x.jpg'}]}
  ];
- assert.deepEqual(api.parsePage({posts,isLast:true}).posts.map(p=>p.id),['1']);
+ assert.deepEqual(api.parsePage({posts,isLast:true}).posts.map(p=>p.id),['1','text']);
+ assert.equal(api.parsePage({posts,isLast:true}).posts[1].content,'Artist의 새 글입니다.');
  assert.equal(api.safeUrl('https://user:password@frommyarti.com/x'),'');
  assert.equal(api.safeUrl('http://frommyarti.com/x'),'');
 });
