@@ -7,7 +7,7 @@
 (()=>{'use strict';
 if(!location.pathname.startsWith('/fromm-viewer-preview/'))return;
 const SOURCE='official-artist-posts';
-let key='',controller=null,version=0,revision=0,status='idle',error='',allPosts=[],isLast=null,modal=null;
+let key='',controller=null,sessionGuard=null,version=0,revision=0,status='idle',error='',errorStatus=0,allPosts=[],isLast=null,modal=null;
 const scope=()=>String(channelVideoState?.channelId||'')+'|'+
   (typeof currentAccountScope==='function'?currentAccountScope():'');
 const active=()=>state?.filter==='live'&&state.live?.centerMode==='channel'&&
@@ -75,7 +75,7 @@ function visiblePosts(){
 function dispose(){
   version++;
   controller?.abort();controller=null;
-  key='';status='idle';error='';allPosts=[];isLast=null;revision++;
+  key='';sessionGuard=null;status='idle';error='';errorStatus=0;allPosts=[];isLast=null;revision++;
   modal?.close();modal?.remove();modal=null;
 }
 async function load(force=false){
@@ -83,23 +83,48 @@ async function load(force=false){
   const next=scope();
   if(next===key&&!force&&status!=='idle')return;
   controller?.abort();const request=new AbortController(),id=++version,verify=sameSession();
-  controller=request;key=next;status='loading';error='';allPosts=[];isLast=null;revision++;paint();
+  controller=request;sessionGuard=verify;key=next;status='loading';error='';errorStatus=0;allPosts=[];isLast=null;revision++;paint();
   try{
     if(typeof frommApiRequest!=='function'||typeof FROMM_CHANNEL_API_BASE!=='string')throw new Error('NO_CLIENT');
-    if(!verify())throw Object.assign(new Error('NO_AUTH'),{status:401});
+    // A missing or changed local session means no HTTP request was sent. Keep
+    // that client-side condition separate from an actual server HTTP 401.
+    if(!verify())throw Object.assign(new Error('NO_AUTH_SESSION'),{code:'NO_AUTH_SESSION'});
     // No guessed query parameters or pagination: first page only.
     const result=await frommApiRequest('/posts',{
       base:FROMM_CHANNEL_API_BASE,channelId:channelVideoState.channelId,signal:request.signal
     });
-    if(id!==version||!verify()||scope()!==next||!active())return;
+    if(id!==version||request.signal.aborted)return;
+    if(!verify()){
+      dispose();
+      if(active())void load();
+      return;
+    }
+    if(scope()!==next||!active())return;
     const data=parsePage(result);
     allPosts=data.posts;isLast=data.isLast;status='ready';
   }catch(e){
-    if(id!==version||request.signal.aborted||scope()!==next||!active())return;
+    if(id!==version||request.signal.aborted)return;
+    // This is a local preflight failure: no request was sent. Handle it before
+    // comparing the session guard, which is expected to be false here.
+    if(e?.code==='NO_AUTH_SESSION'){
+      if(scope()!==next||!active())return;
+      status='error';error='no-session';errorStatus=0;sessionGuard=null;
+      return;
+    }
+    if(!verify()){
+      dispose();
+      if(active())void load();
+      return;
+    }
+    if(scope()!==next||!active())return;
     status='error';
     const http=Number(e?.status||0);
-    error=http===401||http===403?'auth':http===400?'query':
-      http===404?'endpoint':e?.code==='SCHEMA'?'schema':'network';
+    errorStatus=Number.isInteger(http)&&http>0?http:0;
+    error=e?.code==='NO_AUTH_SESSION'?'no-session':
+      http===401?'http-401':http===403?'http-403':
+      http===400?'http-400':http===404?'http-404':
+      http>=500?'http-server':e?.code==='SCHEMA'?'schema':'network';
+    if(error==='no-session')sessionGuard=null;
   }finally{
     if(id===version){controller=null;revision++;paint();window.FrommPreviewArtist?.syncUI?.();}
   }
@@ -124,11 +149,14 @@ function make(tag,className,textValue){
 function emptyText(){
   if(status==='loading')return '공식 Artist 게시물을 불러오는 중…';
   if(status==='error'){
-    return ({auth:'Artist 피드 인증이 거부됐습니다(401/403). 현재 계정의 접근 권한을 확인해야 합니다.',
-      query:'Artist 피드 조회 조건이 아직 확인되지 않아 서버가 요청을 거부했습니다(400).',
-      endpoint:'Artist 목록 경로가 이 계정/API에서 확인되지 않았습니다(404).',
+    return ({'no-session':'Viewer에서 유효한 Fromm 세션을 확인하지 못해 Artist API 요청을 보내지 않았습니다.',
+      'http-401':'Artist 목록 요청 GET /posts가 HTTP 401을 반환했습니다. 계정 인증 상태를 확인해야 합니다.',
+      'http-403':'Artist 목록 요청 GET /posts가 HTTP 403을 반환했습니다. 이 채널의 게시물 접근 권한을 확인해야 합니다.',
+      'http-400':'Artist 목록 요청 GET /posts가 HTTP 400을 반환했습니다. 조회 조건이 확인되지 않아 요청을 수정하지 않았습니다.',
+      'http-404':'Artist 목록 요청 GET /posts가 HTTP 404를 반환했습니다. 이 API 경로의 실제 지원 여부를 확인해야 합니다.',
+      'http-server':`Artist 목록 API가 HTTP ${errorStatus}를 반환했습니다. 서버 응답을 확인해야 합니다.`,
       schema:'Artist 목록의 응답 형식이 예상과 달라 데이터를 표시하지 않았습니다.',
-      network:'Artist 피드 연결에 실패했습니다. CORS 또는 네트워크 상태를 확인해주세요.'})[error];
+      network:'Artist 목록 요청에서 읽을 수 있는 HTTP 응답을 받지 못했습니다. 네트워크 오류 또는 브라우저 CORS 차단일 수 있어 실제 요청을 따로 확인해야 합니다.'})[error];
   }
   return status==='ready'?'이 첫 페이지에 표시 가능한 Artist 사진·영상이 없습니다.':'Artist 목록을 준비 중입니다.';
 }
@@ -152,6 +180,9 @@ function card(p){
 function paint(){
   if(!active())return;
   if(scope()!==key){void load();return;}
+  // Do not recursively restart while the new request is still in its own
+  // loading state; its preflight reports a no-session result below.
+  if(status!=='loading'&&sessionGuard&&!sessionGuard()){void load(true);return;}
   const root=rootNode();
   if(root){
     if(status==='ready'&&visiblePosts().length){
@@ -174,6 +205,7 @@ function sync(){
     return;
   }
   if(scope()!==key){void load();return;}
+  if(status==='error'&&error==='no-session'&&sameSession()()){void load(true);return;}
   paint();
 }
 async function openPost(id){
@@ -257,6 +289,6 @@ window.FrommPreviewArtistPosts=Object.freeze({
     const footer=document.querySelector('.video-list-footer');
     if(footer)footer.hidden=false;
   },
-  get snapshot(){return {active:active(),status,error,count:allPosts.length,isLast};}
+  get snapshot(){return {active:active(),status,error,httpStatus:errorStatus,count:allPosts.length,isLast};}
 });
 })();

@@ -143,6 +143,57 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   await page.locator('.preview-artist-post-dialog img').waitFor({state:'attached',timeout:3000});
   assert.ok((await page.locator('.preview-artist-post-dialog img').getAttribute('src')).includes('artist-photo.jpg'));
   await page.locator('.preview-artist-post-dialog button').first().dispatchEvent('click');
+  const diagnostics=await page.evaluate(async()=>{
+    const messages=[];
+    for(const status of [401,403,400,404]){
+      window.frommApiRequest=async()=>{throw Object.assign(new Error('Synthetic HTTP failure'),{status});};
+      await window.FrommPreviewArtistPosts.reload();
+      messages.push(document.querySelector('.preview-artist-posts-empty')?.textContent||'');
+    }
+    let unsentCalls=0;
+    window.channelVideoSession=()=>()=>false;
+    window.frommApiRequest=async()=>{unsentCalls++;throw new Error('Request must not be sent');};
+    await window.FrommPreviewArtistPosts.reload();
+    const noSession={
+      message:document.querySelector('.preview-artist-posts-empty')?.textContent||'',
+      httpStatus:window.FrommPreviewArtistPosts.snapshot.httpStatus,
+      calls:unsentCalls
+    };
+    window.channelVideoSession=()=>()=>true;
+    window.frommApiRequest=async route=>{
+      const mediaPost=(id,type,visible=true)=>({
+        id,mediaType:type,content:id,isVisible:visible,author:{id:'artist-a',name:'멤버 A'},
+        media:[{mediaType:type,url:'https://channel-contents.frommyarti.com/'+id+(type==='image'?'.jpg':'.mp4')}]
+      });
+      const posts=[mediaPost('artist-photo','image'),mediaPost('artist-video','video')];
+      return route==='/posts'?{data:{posts,isLast:true}}:{data:{post:posts.find(p=>p.id===route.slice('/posts/'.length))}};
+    };
+    await window.FrommPreviewArtistPosts.reload();
+    const beforeSessionChange=document.querySelectorAll('[data-preview-artist-open]').length;
+    window.channelVideoSession=()=>()=>false;
+    await window.FrommPreviewArtistPosts.reload();
+    const changedSession={
+      before:beforeSessionChange,
+      after:document.querySelectorAll('[data-preview-artist-open]').length,
+      status:window.FrommPreviewArtistPosts.snapshot.status,
+      error:window.FrommPreviewArtistPosts.snapshot.error
+    };
+    window.channelVideoSession=()=>()=>true;
+    await window.FrommPreviewArtistPosts.reload();
+    return {messages,noSession,changedSession};
+  });
+  assert.match(diagnostics.messages[0],/HTTP 401/);
+  assert.match(diagnostics.messages[1],/HTTP 403/);
+  assert.notEqual(diagnostics.messages[0],diagnostics.messages[1]);
+  assert.match(diagnostics.messages[2],/HTTP 400/);
+  assert.match(diagnostics.messages[3],/HTTP 404/);
+  assert.match(diagnostics.noSession.message,/요청을 보내지 않았습니다/);
+  assert.equal(diagnostics.noSession.httpStatus,0);
+  assert.equal(diagnostics.noSession.calls,0);
+  assert.equal(diagnostics.changedSession.before,2);
+  assert.equal(diagnostics.changedSession.after,0);
+  assert.equal(diagnostics.changedSession.status,'error');
+  assert.equal(diagnostics.changedSession.error,'no-session');
   const returned=await page.evaluate(async()=>{
     await window.FrommPreviewArtist.choose('all');
     return {
