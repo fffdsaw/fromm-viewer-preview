@@ -52,6 +52,18 @@ channel_visible_preview = '''function visibleChannelPosts(){
 }'''
 html = replace_exact(html, channel_visible_original, channel_visible_preview,
                      "preview mixed-media Artist filtering inside Channel renderer")
+# The copied renderer owns the initial trigger and count. Make Artist visible
+# at render time, not only after an asynchronous MutationObserver correction.
+html = replace_exact(
+    html,
+    '${({all:"전체",video:"영상",image:"사진"})[s.mediaType]} ${filterChevronIcon()}',
+    '${(window.FrommPreviewArtist?.state?.category==="artist" ? "Artist" : ({all:"전체",video:"영상",image:"사진"})[s.mediaType])} ${filterChevronIcon()}',
+    "preview Artist filter trigger label")
+html = replace_exact(
+    html,
+    '${s.mediaType === "all" ? "미디어" : s.mediaType === "image" ? "사진 게시물" : "업로드된 비디오"} ${posts.length}개',
+    '${window.FrommPreviewArtist?.state?.category==="artist" ? "Artist" : s.mediaType === "all" ? "미디어" : s.mediaType === "image" ? "사진 게시물" : "업로드된 비디오"} ${posts.length}개',
+    "preview Artist list count label")
 html = replace_exact(html, "<title>Fromm Viewer</title>",
                      "<title>Fromm Viewer · 실험용 · Artist</title>", "title")
 charset = '<meta charset="utf-8" />'
