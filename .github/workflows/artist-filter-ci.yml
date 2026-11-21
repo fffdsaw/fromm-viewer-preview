@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 preview/scripts/build-pr123-preview.py upstream _site "$GITHUB_SHA"
-          grep -Fq 'window.FrommPreviewArtist?.filterPosts(posts)' _site/index.html
+          grep -Fq 'window.FrommPreviewArtist.filterPosts(posts)' _site/index.html
           grep -Fq 'Artist' _site/preview-artist.js
           node --check _site/preview-artist.js
           node --check _site/preview-artist-feed.js
