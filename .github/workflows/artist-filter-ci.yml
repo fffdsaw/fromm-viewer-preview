@@ -48,7 +48,9 @@ jobs:
           grep -Fq 'Artist' _site/preview-artist.js
           node --check _site/preview-artist.js
           node --check _site/preview-artist-feed.js
-          node --test preview/test/preview-artist-filter.test.cjs preview/test/preview-artist-feed.test.cjs
+          node --check _site/preview-artist-posts.js
+          grep -q 'preview-artist-posts.js?v=' _site/index.html
+          node --test preview/test/preview-artist-filter.test.cjs preview/test/preview-artist-feed.test.cjs preview/test/preview-artist-posts.test.cjs
 
       - name: Run pinned upstream tests
         shell: bash
