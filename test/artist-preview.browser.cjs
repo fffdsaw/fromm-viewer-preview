@@ -139,6 +139,19 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   await page.locator('.preview-artist-post-dialog img').waitFor({state:'attached',timeout:3000});
   assert.ok((await page.locator('.preview-artist-post-dialog img').getAttribute('src')).includes('artist-photo.jpg'));
   await page.locator('.preview-artist-post-dialog button').first().click();
+  const returned=await page.evaluate(async()=>{
+    await window.FrommPreviewArtist.choose('all');
+    return {
+      category:window.FrommPreviewArtist.state.category,
+      source:window.FrommPreviewArtistPosts.snapshot.active,
+      ids:[...document.querySelectorAll('[data-channel-video-card]')].map(e=>e.dataset.channelVideoCard).sort(),
+      count:document.querySelector('.replay-count')?.textContent||''
+    };
+  });
+  assert.equal(returned.category,'all');
+  assert.equal(returned.source,false);
+  assert.deepEqual(returned.ids,['artist-photo','artist-video','channel-video']);
+  assert.equal(returned.count,'미디어 3개');
 
   // Preview-only visual regression: glass surfaces lose their palette tint,
   // while the browser's backdrop sampling and menu animation remain available.
