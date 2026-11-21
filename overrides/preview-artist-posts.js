@@ -163,9 +163,9 @@ function paint(){
   }
   // The copied Channel renderer may retain or repaint the toolbar without
   // replacing our grid. Always reconcile the counter and footer independently.
-  const counter=document.querySelector('.channel-list-shell .replay-count');
+  const counter=document.querySelector('.replay-count');
   if(counter){const label=status==='ready'?'Artist '+visiblePosts().length+'개':'Artist · '+(status==='loading'?'불러오는 중':status==='error'?'연결 실패':'확인 중');if(counter.textContent!==label)counter.textContent=label;}
-  const footer=document.querySelector('.channel-list-shell .video-list-footer');
+  const footer=document.querySelector('.video-list-footer');
   if(footer)footer.hidden=true;
 }
 function sync(){
@@ -254,7 +254,7 @@ window.FrommPreviewArtistPosts=Object.freeze({
   sync,reload:()=>load(true),
   leave:()=>{
     dispose();
-    const footer=document.querySelector('.channel-list-shell .video-list-footer');
+    const footer=document.querySelector('.video-list-footer');
     if(footer)footer.hidden=false;
   },
   get snapshot(){return {active:active(),status,error,count:allPosts.length,isLast};}
