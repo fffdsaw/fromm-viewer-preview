@@ -153,13 +153,16 @@ function paint(){
   if(!active())return;
   if(scope()!==key){void load();return;}
   const root=rootNode();
-  if(!root)return;
-  if(status==='ready'&&visiblePosts().length){
-    const grid=make('div','replay-grid');
-    for(const p of visiblePosts())grid.append(card(p));
-    root.append(grid);
-    if(isLast===false)root.append(make('p','preview-artist-posts-note','첫 페이지까지만 표시 중 · 다음 페이지 조회 조건 확인 필요'));
-  }else root.append(make('p','replay-empty preview-artist-posts-empty',emptyText()));
+  if(root){
+    if(status==='ready'&&visiblePosts().length){
+      const grid=make('div','replay-grid');
+      for(const p of visiblePosts())grid.append(card(p));
+      root.append(grid);
+      if(isLast===false)root.append(make('p','preview-artist-posts-note','첫 페이지까지만 표시 중 · 다음 페이지 조회 조건 확인 필요'));
+    }else root.append(make('p','replay-empty preview-artist-posts-empty',emptyText()));
+  }
+  // The copied Channel renderer may retain or repaint the toolbar without
+  // replacing our grid. Always reconcile the counter and footer independently.
   const counter=document.querySelector('.channel-list-shell .replay-count');
   if(counter){const label=status==='ready'?'Artist '+visiblePosts().length+'개':'Artist · '+(status==='loading'?'불러오는 중':status==='error'?'연결 실패':'확인 중');if(counter.textContent!==label)counter.textContent=label;}
   const footer=document.querySelector('.channel-list-shell .video-list-footer');
