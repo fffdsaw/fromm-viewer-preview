@@ -29,7 +29,7 @@ for pattern in ("index.html", "*.js", "*.css", "*.webmanifest", ".nojekyll"):
         shutil.copy2(source, site / source.name)
 for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
-for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js", "preview-nickname.js", "preview-artist-feed.css", "preview-artist-feed.js"):
+for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js", "preview-nickname.js", "preview-artist-feed.css", "preview-artist-feed.js", "preview-neutral-glass.css"):
     shutil.copy2(preview / "overrides" / filename, site / filename)
 
 def replace_exact(value, old, new, why):
@@ -97,6 +97,10 @@ html = replace_exact(html, "</head>",
 html = replace_exact(html, "</body>",
                      f'<script src="preview-artist-feed.js?v={version}"></script>\n</body>',
                      "preview Artist official-feed source discovery")
+# Loaded after all upstream theme/optics CSS and after preview Artist styles.
+html = replace_exact(html, "</head>",
+                     f'<link rel="stylesheet" href="preview-neutral-glass.css?v={version}">\n</head>',
+                     "preview-only untinted header and morph glass")
 html_path.write_text(html, encoding="utf-8")
 
 manifest_path = site / "manifest.webmanifest"
@@ -143,6 +147,27 @@ sw = replace_exact(sw, "const CACHE_NAME = CACHE_PREFIX + 'v2';",
                    "invalidate old preview artwork")
 sw_path.write_text(sw, encoding="utf-8")
 
+# Preview-only generated copies: neutralize color saturation on the top-bar
+# fixed action glass and the liquid filter morph face. The original engine,
+# motion, refraction, blur, specular, and user preferences remain unchanged.
+fixed_path = site / "web-clear-controls.js"
+fixed = fixed_path.read_text(encoding="utf-8")
+fixed = replace_exact(
+    fixed,
+    "...materialOptions(fixedPreset)});builds++;",
+    "...materialOptions(el.closest('.viewer-header') ? {...fixedPreset,saturation:100} : fixedPreset)});builds++;",
+    "fixed top-bar glass has neutral saturation")
+fixed_path.write_text(fixed, encoding="utf-8")
+
+morph_path = site / "web-morph-menu.js"
+morph = morph_path.read_text(encoding="utf-8")
+morph = replace_exact(
+    morph,
+    "const settings={...materialOptions(glassPreferences.value),scheme:'adaptive'};",
+    "const settings={...materialOptions(glassPreferences.value),saturation:100,tint:'rgba(255,255,255,0)',scheme:'adaptive'};",
+    "neutral color on original Meapri filter morph face")
+morph_path.write_text(morph, encoding="utf-8")
+
 # Keep source (including new theme/settings/compact-player assets) untouched
 # other than explicit project-path and storage isolation. Never import PR #124/125.
 required = ("index.html", "web-compact-player.js", "compact-player.css",
@@ -150,7 +175,7 @@ required = ("index.html", "web-compact-player.js", "compact-player.css",
             "web-glass-controls.js", "web-glass-settings.js",
             "web-chat-audio.js", "web-pwa.js", "sw.js",
             "preview-storage.js", "preview-artist-banner.js", "preview-artist.css",
-            "preview-artist.js", "preview-nickname.js", "preview-artist-feed.js", "web-channel-photos.js", "web-morph-menu.js")
+            "preview-artist.js", "preview-nickname.js", "preview-artist-feed.js", "preview-neutral-glass.css", "web-channel-photos.js", "web-morph-menu.js")
 for filename in required:
     if not (site / filename).is_file():
         raise AssertionError(f"required PR #123 preview asset missing: {filename}")
@@ -168,4 +193,5 @@ for filename in required:
     "previewArtist": "attributed-channel-mixed-media-filter",
     "previewNickname": "hasNick-and-marker-room-scoped",
     "previewArtistFeed": "official-feed-url-discovery-only",
+    "previewNeutralGlass": "header-toggles-and-morph-no-color-tint",
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
