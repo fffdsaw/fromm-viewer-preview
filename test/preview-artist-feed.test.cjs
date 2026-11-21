@@ -43,6 +43,24 @@ test('selected member cannot show a different chat artist feed',()=>{
  });
 });
 
+
+test('unrelated chat room must never become selected Channel Artist source',()=>{
+  const {window}=mount({room:{host:{id:'unrelated',nick:'다른 채팅방'}}});
+  assert.equal(window.FrommPreviewArtistFeed.candidate(),null);
+});
+
+test('explicit member attribution from selected Channel can identify source safely',()=>{
+  const app=mount({room:{host:{id:'unrelated',nick:'다른 채팅방'}}});
+  app.window.FrommPreviewArtist.collectMembers=()=>[
+    {id:'member-a',name:'멤버 A'},{id:'member-b',name:'멤버 B'}
+  ];
+  assert.equal(app.window.FrommPreviewArtistFeed.candidate(),null,'multiple artists need explicit member selection');
+  app.window.FrommPreviewArtist.state.member='member-b';
+  assert.deepEqual(app.window.FrommPreviewArtistFeed.candidate(),{
+    id:'member-b',name:'멤버 B',channel:'group-a'
+  });
+});
+
 test('source accepts only verified https frommyarti domains',()=>{
  const f=mount().window.FrommPreviewArtistFeed.safeUrl;
  assert.equal(f('https://channel.frommyarti.com/feed/1'),'https://channel.frommyarti.com/feed/1');
