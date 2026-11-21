@@ -1,0 +1,66 @@
+name: Verify Preview Artist Filters
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'overrides/preview-artist*.js'
+      - 'scripts/build-pr123-preview.py'
+      - 'test/preview-artist*.cjs'
+      - '.github/workflows/artist-filter-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Test isolated Artist filter without publishing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout fixed upstream operating source (read only)
+        uses: actions/checkout@v4
+        with:
+          repository: fffdsaw/fromm-viewer
+          ref: a21ced8d34bab7b4d3d7662babb106cbd144cad3
+          persist-credentials: false
+          path: upstream
+
+      - name: Checkout preview PR
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: preview
+
+      - name: Build and verify Artist renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 preview/scripts/build-pr123-preview.py upstream _site "$GITHUB_SHA"
+          grep -Fq 'window.FrommPreviewArtist?.filterPosts(posts)' _site/index.html
+          grep -Fq 'Artist' _site/preview-artist.js
+          node --check _site/preview-artist.js
+          node --check _site/preview-artist-feed.js
+          node --test preview/test/preview-artist-filter.test.cjs preview/test/preview-artist-feed.test.cjs
+
+      - name: Run pinned upstream tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test upstream/test/*.test.cjs
+
+      - name: Install browser test runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd preview
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+
+      - name: Run preview browser smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREVIEW_SITE_ROOT="$PWD/_site" node preview/test/artist-preview.browser.cjs
