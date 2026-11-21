@@ -27,7 +27,7 @@ function candidate(room=state?.room,selectedChannel=channelId()){
   const matched=selectedMember
     ?verified.find(m=>m.id===selectedMember)
     :verified.length===1?verified[0]:null;
-  if(matched)return {id:String(matched.id),name:matched.name||'아티스트',channel};
+  if(matched?.artiId)return {id:String(matched.artiId),name:matched.name||'아티스트',channel};
   // If the channel has multiple verified members, require an explicit choice.
   if(!selectedMember&&verified.length>1)return null;
   // The selected chat room is unrelated unless its own metadata binds it to
