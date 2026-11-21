@@ -78,6 +78,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
     });
     window.__artistProbeCalls=[];
     window.channelVideoSession=()=>()=>true;
+    window.currentAccountScope=()=> 'synthetic-artist-account';
     window.frommApiRequest=async(route,options)=>{
       window.__artistProbeCalls.push({route,channelId:options.channelId});
       const mediaPost=(id,type,visible=true)=>({
