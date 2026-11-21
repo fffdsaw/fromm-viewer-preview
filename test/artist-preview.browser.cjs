@@ -34,7 +34,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   assert.equal(build.sourceCommit,'a21ced8d34bab7b4d3d7662babb106cbd144cad3');
   assert.equal(build.indexedDB,'fromm-preview-conversations-v1');
   assert.equal(build.storageNamespace,'fromm.preview.v1::');
-  assert.equal(build.previewArtist,'attributed-channel-image-filter');
+  assert.equal(build.previewArtist,'attributed-channel-mixed-media-filter');
   const check=await page.evaluate(()=>{
    const api=window.FrommPreviewArtist;
    if(!api)return {mounted:false};
@@ -50,7 +50,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
     members:api.collectMembers(posts).map(x=>x.name),
     explicit:api.attribution(posts[0])?.id,
     unknown:api.attribution(posts[2]),
-    excludeVideo:api.attribution(posts[3]),
+    includeVideo:api.attribution(posts[3])?.id,
     visibleDefault:api.filterPosts(posts).length,
     storagePrefix:window.FrommPreviewStorage?.prefix,
     previewStored:window.__rawPreviewTestGet('fromm.preview.v1::preview-artist-probe'),
@@ -62,7 +62,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   assert.deepEqual(check.members,['멤버 A','멤버 B']);
   assert.equal(check.explicit,'10');
   assert.equal(check.unknown,null);
-  assert.equal(check.excludeVideo,null);
+  assert.equal(check.includeVideo,'10');
   assert.equal(check.visibleDefault,4);
   assert.equal(check.storagePrefix,'fromm.preview.v1::');
   assert.equal(check.previewStored,'isolated');
