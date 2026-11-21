@@ -19,8 +19,8 @@ Dex `classes2.dex`의 Retrofit 인터페이스 `Lp8/c;`의 주석 및 매개변�
 | GET | `/feed/posts/{postId}` | Header `channel-id`, Path `postId` | `ChannelFanFeedPostBody` | 팬 피드 **단일 게시물** |
 | POST | `/posts` | Header `channel-id`, JSON `ArtiCreateFeedPostRequest` | `CreateFeedPostBody` | 아티스트 게시물 **작성** |
 | POST | `/feed/posts` | Header `channel-id`, JSON `FanCreateFeedPostRequest` | `CreateFeedPostBody` | 팬 게시물 **작성** |
-| PATCH | `/posts/{postId}` | Header `channel-id`, Path `postId`, JSON body | generic | 아티스트 게시물 수정 |
-| PATCH | `/feed/posts/{postId}` | Header `channel-id`, Path `postId`, JSON body | generic | 팬 게시물 수정 |
+| 수정 요청 (HTTP 동사 미확정) | `/posts/{postId}` | Header `channel-id`, Path `postId`, JSON body | generic | 아티스트 게시물 수정 |
+| 수정 요청 (HTTP 동사 미확정) | `/feed/posts/{postId}` | Header `channel-id`, Path `postId`, JSON body | generic | 팬 게시물 수정 |
 
 `classes.dex`의 `POST /v2/app/resource/channel/media`는 multipart 업로드 응답 `UploadChannelMediaBody`이며 **미디어 조회 API가 아님**.
 
