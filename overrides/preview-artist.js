@@ -25,6 +25,9 @@
  }
  function filterPosts(posts){
    if(category!=='artist')return posts;
+   // The Channel grid renders before the observer updates its controls.
+   // Clear a prior channel's selected member before filtering new posts.
+   syncScope();
    return posts.filter(p=>{const a=attribution(p);return a&&(!member||a.id===member);});
  }
  // The copied preview HTML invokes filterPosts directly from
