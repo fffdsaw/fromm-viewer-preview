@@ -1,0 +1,74 @@
+name: Verify Preview Neutral Glass
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'overrides/preview-neutral-glass.css'
+      - 'scripts/build-pr123-preview.py'
+      - 'test/preview-neutral-glass.test.cjs'
+      - 'test/artist-preview.browser.cjs'
+      - '.github/workflows/neutral-glass-pr.yml'
+      - '.github/workflows/pages-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-neutral-glass-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Build, regress, and inspect isolated optics (no deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout pinned operating source read only
+        uses: actions/checkout@v4
+        with:
+          repository: fffdsaw/fromm-viewer
+          ref: a21ced8d34bab7b4d3d7662babb106cbd144cad3
+          fetch-depth: 0
+          persist-credentials: false
+          path: upstream
+
+      - name: Checkout preview PR
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: preview
+
+      - name: Assemble isolated neutral glass preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 preview/scripts/build-pr123-preview.py upstream _site "$GITHUB_SHA"
+          grep -q 'preview-neutral-glass.css?v=' _site/index.html
+          grep -Fq "saturation:100,tint:'rgba(255,255,255,0)'" _site/web-morph-menu.js
+          grep -Fq "el.closest('.viewer-header')" _site/web-clear-controls.js
+          node --check _site/web-morph-menu.js
+          node --check _site/web-clear-controls.js
+          node --test preview/test/preview-neutral-glass.test.cjs
+          node --test preview/test/preview-artist-filter.test.cjs preview/test/preview-artist-feed.test.cjs preview/test/preview-nickname.test.cjs
+
+      - name: Run operating-source regressions without editing source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test upstream/test/*.test.cjs
+
+      - name: Install isolated Chromium test tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd preview
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+
+      - name: Confirm untinted glass and existing Artist UI in browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREVIEW_SITE_ROOT="$PWD/_site" node preview/test/artist-preview.browser.cjs
