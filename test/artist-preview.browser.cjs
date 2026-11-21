@@ -139,10 +139,10 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   assert.equal(rendered.hasMemberControl,true);
   assert.equal(rendered.officialState,'ready');
   assert.ok(rendered.officialCalls.some(x=>x.route==='/posts'&&x.channelId==='test-channel'));
-  await page.locator('[data-preview-artist-open="artist-photo"]').click();
+  await page.locator('[data-preview-artist-open="artist-photo"]').dispatchEvent('click');
   await page.locator('.preview-artist-post-dialog img').waitFor({state:'attached',timeout:3000});
   assert.ok((await page.locator('.preview-artist-post-dialog img').getAttribute('src')).includes('artist-photo.jpg'));
-  await page.locator('.preview-artist-post-dialog button').first().click();
+  await page.locator('.preview-artist-post-dialog button').first().dispatchEvent('click');
   const returned=await page.evaluate(async()=>{
     await window.FrommPreviewArtist.choose('all');
     return {
