@@ -18,21 +18,32 @@ function enabled(){
     &&window.FrommPreviewArtist.state.category==='artist';
 }
 function candidate(room=state?.room,selectedChannel=channelId()){
-  // A selected member must never open the previously selected chat artist's feed.
+  const channel=String(selectedChannel||'').trim();
+  if(!channel)return null;
   const selectedMember=window.FrommPreviewArtist?.state?.member||'';
-  if(selectedMember){
-    const rooms=Array.isArray(state?.rooms)?state.rooms:[];
-    const matching=rooms.find(r=>String(r?.host?.artiId??r?.host?.id??r?.artiId??'')===selectedMember);
-    if(matching)room=matching;
-    else if(String(room?.host?.artiId??room?.host?.id??room?.artiId??'')!==selectedMember)return null;
+  // These member identities come from explicit uploader fields on the
+  // CURRENT CHANNEL's own uploaded posts (never from a different chat room).
+  const verified=window.FrommPreviewArtist?.collectMembers?.()||[];
+  const matched=selectedMember
+    ?verified.find(m=>m.id===selectedMember)
+    :verified.length===1?verified[0]:null;
+  if(matched)return {id:String(matched.id),name:matched.name||'아티스트',channel};
+  // If the channel has multiple verified members, require an explicit choice.
+  if(!selectedMember&&verified.length>1)return null;
+  // The selected chat room is unrelated unless its own metadata binds it to
+  // the current Channel ID. Never use a sidebar room name as proof.
+  const rooms=selectedMember&&Array.isArray(state?.rooms)?state.rooms:[];
+  const candidates=[...rooms,room].filter(Boolean);
+  for(const candidateRoom of candidates){
+    if(!candidateRoom.host)continue;
+    const declared=candidateRoom.channelId??candidateRoom.host.channelId??candidateRoom.channel?.id;
+    if(declared==null||String(declared)!==channel)continue;
+    const id=candidateRoom.host.artiId??candidateRoom.host.id??candidateRoom.artiId;
+    if(id==null||!String(id).trim()||(selectedMember&&String(id)!==selectedMember))continue;
+    const name=String(candidateRoom.host.nick||candidateRoom.host.name||candidateRoom.chatRoomName||'아티스트').trim();
+    return {id:String(id),name,channel};
   }
-  if(!room||!room.host)return null;
-  const declared=room.channelId??room.host?.channelId??room.channel?.id??'';
-  if(declared&&selectedChannel&&String(declared)!==selectedChannel)return null;
-  const id=room.host.artiId??room.host.id??room.artiId;
-  if(id===undefined||id===null||!String(id).trim())return null;
-  const name=String(room.host.nick||room.host.name||room.chatRoomName||'선택된 아티스트').trim();
-  return {id:String(id),name,channel:String(selectedChannel||'')};
+  return null;
 }
 function safeUrl(value){
   if(typeof value!=='string'||!value.trim()||value.length>4096)return '';
@@ -107,7 +118,7 @@ function renderNote(){
   }
   const info=candidate();
   if(!info){
-    const message='공식 Artist 피드: 현재 채팅방의 아티스트 ID를 확인할 수 없습니다.';
+    const message='공식 Artist 피드: 선택 채널과 연결된 아티스트 ID를 확인할 수 없습니다.';
     if(note.textContent!==message)note.textContent=message;
     return;
   }
