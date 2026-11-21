@@ -1,6 +1,6 @@
 /* Preview-only Artist filter experiment. It never modifies the source repository.
- * The current Channel photo feed is the only verified data source: do not
- * invent an Artist API, infer ownership from filenames or show fake members. */
+ * The existing mixed Channel media list is the only verified post source.
+ * Artist authorship must be explicit: never invent an Artist feed API or author. */
 (()=>{'use strict';
  if(!location.pathname.startsWith('/fromm-viewer-preview/'))return;
  let category='all',member='',lastChannel='',observer=null;
@@ -8,28 +8,41 @@
  const channelActive=()=>typeof state!=='undefined'&&state.filter==='live'&&state.live.centerMode==='channel'&&!channelVideoState.selected;
  const channelPosts=()=>{const page=typeof channelVideoPage==='function'?channelVideoPage():null;return Array.isArray(page?.posts)?page.posts:[];};
  function attribution(post){
-   if(!post||post.type!=='image')return null;
+   // Both uploaded photos and uploaded videos may carry explicit artist metadata.
+   if(!post||!['image','video'].includes(post.type))return null;
    const person=post.artist&&typeof post.artist==='object'?post.artist:null;
    const identifier=person?.id??post.artistId??post.memberId;
    const name=person?.nick||person?.name||post.artistName||post.memberName||'';
    // Only explicit member/artist fields count; generic authors may be channel staff.
    if(identifier==null&&!String(name).trim())return null;
    const id=identifier!=null?String(identifier):'name:'+String(name).trim();
-   return {id,name:String(name).trim()||'아티스트'};
+   const explicitArtiId=person?.artiId??post.artiId;
+   const info={id,name:String(name).trim()||'아티스트'};
+   // An arbitrary member ID is not necessarily the artiId accepted by
+   // GET /channels/arti. Only forward the field when named explicitly.
+   if(explicitArtiId!=null&&String(explicitArtiId).trim())info.artiId=String(explicitArtiId).trim();
+   return info;
  }
  function collectMembers(posts=channelPosts()){
    const map=new Map();
-   for(const p of posts){const a=attribution(p);if(a&&!map.has(a.id))map.set(a.id,a);}
+   for(const p of posts){
+     const a=attribution(p);
+     if(!a)continue;
+     const known=map.get(a.id);
+     if(!known||(!known.artiId&&a.artiId))map.set(a.id,a);
+   }
    return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'ko'));
  }
  function filterPosts(posts){
    if(category!=='artist')return posts;
+   // The Channel grid renders before the observer updates its controls.
+   // Clear a prior channel's selected member before filtering new posts.
+   syncScope();
    return posts.filter(p=>{const a=attribution(p);return a&&(!member||a.id===member);});
  }
- const originalVisible=window.visibleChannelPosts;
- if(typeof originalVisible==='function'){
-   window.visibleChannelPosts=function(...args){return filterPosts(originalVisible.apply(this,args));};
- }
+ // The copied preview HTML invokes filterPosts directly from
+ // visibleChannelPosts(). Avoid monkey-patching a global that the original
+ // renderer may capture before this script loads.
  function syncScope(){
    if(!channelActive())return;
    const id=String(channelVideoState.channelId||'');
@@ -75,8 +88,8 @@
    const empty=document.querySelector('.channel-list-shell .replay-empty');
    if(empty&&category==='artist'&&!channelVideoState.loading){
      const message=collectMembers().length
-       ?'해당 멤버의 사진 게시물이 없습니다.'
-       :'현재 채널 응답에서는 Artist 업로더 정보를 확인하지 못했습니다. 공식 Artist 전용 목록 연결은 검증이 필요합니다.';
+       ?'선택한 멤버가 올린 것으로 확인되는 사진·영상이 없습니다.'
+       :'이 채널의 미디어 중 아티스트 작성자를 확인할 수 있는 사진·영상이 없습니다. 공식 Artist 피드 전체 목록은 아직 연결되지 않았습니다.';
      if(empty.textContent!==message)empty.textContent=message;
    }
  }
@@ -85,9 +98,9 @@
    const next=Object.hasOwn(LABELS,value)?value:'all',changed=category!==next;
    category=next;
    if(next!=='artist')member='';
-   // The verified Channel backend accepts all/video/image; Artist is a
-   // distinct preview category, not another user-visible name for photo.
-   const underlyingType=next==='artist'?'image':next;
+   // Request the verified mixed media feed for Artist. 'image' silently drops
+   // every artist video, but 'artist' itself is not a supported API mediaType.
+   const underlyingType=next==='artist'?'all':next;
    try{
      if(channelVideoState.mediaType!==underlyingType)await selectChannelMediaType(underlyingType);
      else if(changed)refresh();
@@ -155,6 +168,7 @@
  window.FrommPreviewArtist=Object.freeze({
    attribution,collectMembers,filterPosts,
    get state(){return {category,member,channel:lastChannel};},
+   syncUI:update,
    choose
  });
 })();

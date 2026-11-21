@@ -34,7 +34,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   assert.equal(build.sourceCommit,'a21ced8d34bab7b4d3d7662babb106cbd144cad3');
   assert.equal(build.indexedDB,'fromm-preview-conversations-v1');
   assert.equal(build.storageNamespace,'fromm.preview.v1::');
-  assert.equal(build.previewArtist,'attributed-channel-image-filter');
+  assert.equal(build.previewArtist,'attributed-channel-mixed-media-filter');
   const check=await page.evaluate(()=>{
    const api=window.FrommPreviewArtist;
    if(!api)return {mounted:false};
@@ -50,7 +50,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
     members:api.collectMembers(posts).map(x=>x.name),
     explicit:api.attribution(posts[0])?.id,
     unknown:api.attribution(posts[2]),
-    excludeVideo:api.attribution(posts[3]),
+    includeVideo:api.attribution(posts[3])?.id,
     visibleDefault:api.filterPosts(posts).length,
     storagePrefix:window.FrommPreviewStorage?.prefix,
     previewStored:window.__rawPreviewTestGet('fromm.preview.v1::preview-artist-probe'),
@@ -62,12 +62,56 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
   assert.deepEqual(check.members,['멤버 A','멤버 B']);
   assert.equal(check.explicit,'10');
   assert.equal(check.unknown,null);
-  assert.equal(check.excludeVideo,null);
+  assert.equal(check.includeVideo,'10');
   assert.equal(check.visibleDefault,4);
   assert.equal(check.storagePrefix,'fromm.preview.v1::');
   assert.equal(check.previewStored,'isolated');
   assert.equal(check.productionUnchanged,'do-not-change');
   assert.equal(check.seesProduction,null);
+
+  // End-to-end rendering proof: the Artist UI must NOT silently fall back to
+  // the photo category, and explicitly attributed artist videos must remain.
+  const rendered=await page.evaluate(async()=>{
+    const post=(id,type,artist)=>({
+      id,type,title:id,displayStartAt:1730000000000,
+      ...(artist?{artist:{id:'artist-a',name:'멤버 A'}}:{})
+    });
+    state.filter='live';state.live.centerMode='channel';
+    state.live.channelsLoaded=true;
+    state.live.channels=[{id:'test-channel',channelName:'테스트 채널'}];
+    channelVideoState.channelId='test-channel';
+    channelVideoState.mediaType='all';
+    channelVideoState.selected=null;
+    channelVideoState.pages.set('test-channel',{
+      loaded:true,isLast:true,posts:[
+        post('artist-photo','image',true),
+        post('artist-video','video',true),
+        post('channel-video','video',false)
+      ]
+    });
+    renderLiveView();
+    await window.FrommPreviewArtist.choose('artist');
+    await Promise.resolve();
+    const label=document.querySelector('[data-channel-content-menu]');
+    const cards=[...document.querySelectorAll('[data-channel-video-card]')];
+    return {
+      category:window.FrommPreviewArtist.state.category,
+      mediaType:channelVideoState.mediaType,
+      label:label?.textContent||'',
+      aria:label?.getAttribute('aria-label')||'',
+      count:document.querySelector('.replay-count')?.textContent||'',
+      ids:cards.map(c=>c.dataset.channelVideoCard).sort(),
+      hasMemberControl:!!document.querySelector('[data-preview-artist-member]')
+    };
+  });
+  assert.equal(rendered.category,'artist');
+  assert.equal(rendered.mediaType,'all');
+  assert.match(rendered.label,/Artist/);
+  assert.match(rendered.aria,/Artist/);
+  assert.equal(rendered.count,'Artist 2개');
+  assert.deepEqual(rendered.ids,['artist-photo','artist-video']);
+  assert.equal(rendered.hasMemberControl,true);
+
   for(const file of ['web-channel-photos.js','web-morph-menu.js','preview-artist.js','preview-artist.css','preview-artist-banner.js']){
    const r=await page.request.get(new URL(file,base).href);
    assert.equal(r.status(),200,file);
