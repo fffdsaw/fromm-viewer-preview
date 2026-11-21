@@ -107,6 +107,9 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
     renderLiveView();
     await window.FrommPreviewArtist.choose('artist');
     await window.FrommPreviewArtistPosts.reload();
+    for(let attempt=0;attempt<20&&window.FrommPreviewArtistPosts.snapshot.status==='loading';attempt++){
+      await new Promise(resolve=>setTimeout(resolve,20));
+    }
     const label=document.querySelector('[data-channel-content-menu]');
     const cards=[...document.querySelectorAll('[data-preview-artist-open]')];
     return {
@@ -121,6 +124,7 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
       hasMemberControl:!!document.querySelector('[data-preview-artist-member]')
     };
   });
+  console.log('OFFICIAL_ARTIST_BROWSER',JSON.stringify(rendered));
   assert.equal(rendered.category,'artist');
   assert.equal(rendered.mediaType,'all');
   assert.match(rendered.label,/Artist/);
