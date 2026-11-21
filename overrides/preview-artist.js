@@ -16,11 +16,21 @@
    // Only explicit member/artist fields count; generic authors may be channel staff.
    if(identifier==null&&!String(name).trim())return null;
    const id=identifier!=null?String(identifier):'name:'+String(name).trim();
-   return {id,name:String(name).trim()||'아티스트'};
+   const explicitArtiId=person?.artiId??post.artiId;
+   const info={id,name:String(name).trim()||'아티스트'};
+   // An arbitrary member ID is not necessarily the artiId accepted by
+   // GET /channels/arti. Only forward the field when named explicitly.
+   if(explicitArtiId!=null&&String(explicitArtiId).trim())info.artiId=String(explicitArtiId).trim();
+   return info;
  }
  function collectMembers(posts=channelPosts()){
    const map=new Map();
-   for(const p of posts){const a=attribution(p);if(a&&!map.has(a.id))map.set(a.id,a);}
+   for(const p of posts){
+     const a=attribution(p);
+     if(!a)continue;
+     const known=map.get(a.id);
+     if(!known||(!known.artiId&&a.artiId))map.set(a.id,a);
+   }
    return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'ko'));
  }
  function filterPosts(posts){
