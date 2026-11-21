@@ -119,6 +119,10 @@ const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json
       label:label?.textContent||'',
       aria:label?.getAttribute('aria-label')||'',
       count:document.querySelector('.replay-count')?.textContent||'',
+      allCounts:[...document.querySelectorAll('.replay-count')].map(el=>({
+        text:el.textContent,channel:!!el.closest('.channel-list-shell'),inTimeline:!!el.closest('#timeline')
+      })),
+      gridRevision:document.querySelector('.preview-artist-posts')?.dataset.previewArtistPosts||'',
       ids:cards.map(c=>c.dataset.previewArtistOpen).sort(),
       officialState:window.FrommPreviewArtistPosts.snapshot.status,
       officialCalls:window.__artistProbeCalls,
