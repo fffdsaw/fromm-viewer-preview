@@ -39,6 +39,19 @@ def replace_exact(value, old, new, why):
 
 html_path = site / "index.html"
 html = html_path.read_text(encoding="utf-8")
+# Preview-only direct integration: when the copied Channel renderer builds
+# its grid, consult the verified artist subset. Never change upstream files.
+channel_visible_original = '''function visibleChannelPosts(){
+  const type=channelVideoState.mediaType;
+  return collectionOrderedPosts((channelVideoPage()?.posts||[]).filter(p=>type==="all" ? p.type==="video"||p.type==="image" : p.type===type),"channel");
+}'''
+channel_visible_preview = '''function visibleChannelPosts(){
+  const type=channelVideoState.mediaType;
+  const posts=collectionOrderedPosts((channelVideoPage()?.posts||[]).filter(p=>type==="all" ? p.type==="video"||p.type==="image" : p.type===type),"channel");
+  return window.FrommPreviewArtist?.filterPosts ? window.FrommPreviewArtist.filterPosts(posts) : posts;
+}'''
+html = replace_exact(html, channel_visible_original, channel_visible_preview,
+                     "preview mixed-media Artist filtering inside Channel renderer")
 html = replace_exact(html, "<title>Fromm Viewer</title>",
                      "<title>Fromm Viewer · 실험용 · Artist</title>", "title")
 charset = '<meta charset="utf-8" />'
