@@ -252,6 +252,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 window.FrommPreviewArtistPosts=Object.freeze({
   normalize,parsePage,safeUrl,memberPosts,
   sync,reload:()=>load(true),
+  leave:()=>{
+    dispose();
+    const footer=document.querySelector('.channel-list-shell .video-list-footer');
+    if(footer)footer.hidden=false;
+  },
   get snapshot(){return {active:active(),status,error,count:allPosts.length,isLast};}
 });
 })();
