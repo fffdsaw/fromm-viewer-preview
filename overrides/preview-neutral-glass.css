@@ -1,0 +1,48 @@
+/* Isolated preview optical color cleanup — no production source changes.
+ * Keep the Meapri refraction/specular maps, menu morph transition, pointer
+ * highlights, focus and selected-state text/borders. Remove only colored
+ * material fills and non-neutral saturation on the requested top controls.
+ */
+@media (prefers-reduced-transparency: no-preference) and (forced-colors: none) {
+  /* Header/collection toggle droplets are CSS glass, not the SDK lens.
+     Neutralize the Glow/theme material overlay, including hover colors.
+     The original clear rim and ::before white illumination remain intact. */
+  :root[data-fromm-theme].glowme.glowme-phase3
+  :is(.viewer-header button,#mediaActionDock button,.channel-media-tabs .channel-content-trigger) {
+    --droplet-tint: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    backdrop-filter: blur(1.6px) saturate(1) !important;
+    -webkit-backdrop-filter: blur(1.6px) saturate(1) !important;
+  }
+  :root[data-fromm-theme].glowme.glowme-phase3
+  :is(.viewer-header button,#mediaActionDock button,.channel-media-tabs .channel-content-trigger):hover:not(:disabled) {
+    background-color: transparent !important;
+  }
+  /* The Artist member toggle had its own theme-colored gradient. */
+  :root[data-fromm-theme].glowme.glowme-phase3 .channel-media-tabs .preview-artist-member {
+    background: transparent !important;
+  }
+  /* Keep the fixed-action glass engine and its specular rim; do not allow
+     the pre-engine fallback to introduce a 117% saturation color boost. */
+  :root[data-fromm-theme] .viewer-header .fixed-glass-surface {
+    backdrop-filter: blur(.4px) saturate(1) !important;
+    -webkit-backdrop-filter: blur(.4px) saturate(1) !important;
+    background-color: transparent !important;
+  }
+  /* Morphing glass is positioned/animated by Meapri. Do NOT alter its
+     transform, clip-path, animation, borders, specular map, or transparency. */
+  :root[data-fromm-theme] .morph-menu-glass,
+  :root[data-fromm-theme] .morph-menu-skin.morph-menu-vertical,
+  :root[data-fromm-theme] .morph-menu-skin.morph-menu-vertical[data-scheme='dark'],
+  :root[data-fromm-theme='classic'] .morph-menu-skin.morph-menu-vertical:not([data-scheme]) {
+    background-color: transparent !important;
+  }
+  /* If optical rendering fails, preserve an accessible, readable panel. */
+  :root[data-fromm-theme] .morph-menu-skin:has(+ .morph-menu-content[data-optics='fallback']) .morph-menu-glass,
+  :root[data-fromm-theme] .morph-menu-skin.morph-menu-vertical:has(+ .morph-menu-content[data-optics='fallback']) {
+    background-color: var(--theme-card) !important;
+  }
+}
+/* Reduced-transparency and forced-color users retain the source's opaque,
+ * high-contrast fallbacks; the production palette and other controls stay. */
