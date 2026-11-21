@@ -14,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: fromm-viewer-preview-pages
+  group: fromm-viewer-preview-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,8 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment:
-      name: github-pages
-      url: https://fffdsaw.github.io/fromm-viewer-preview/
+      # The github-pages environment is reserved for main deployments.
+      # Feature branches run CI against a separate environment, with no Pages upload.
+      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'preview-artist-ci' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://fffdsaw.github.io/fromm-viewer-preview/' || '' }}
     steps:
       - name: Checkout pinned current operating source READ ONLY
         uses: actions/checkout@v4
