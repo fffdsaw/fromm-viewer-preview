@@ -28,6 +28,7 @@ jobs:
         with:
           repository: fffdsaw/fromm-viewer
           ref: a21ced8d34bab7b4d3d7662babb106cbd144cad3
+          fetch-depth: 0
           persist-credentials: false
           path: upstream
 
