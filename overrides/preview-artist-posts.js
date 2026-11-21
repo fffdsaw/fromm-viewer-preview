@@ -35,7 +35,7 @@ const mediaArray=post=>{
 };
 function normalize(raw){
   const p=raw?.post||raw;
-  if(!p||typeof p!=='object'||p.id==null||p.isVisible===false)return null;
+  if(!p||typeof p!=='object'||p.id==null||p.isVisible!==true)return null;
   const files=mediaArray(p),type=['image','video'].includes(p.mediaType)
     ?p.mediaType:files.find(m=>['image','video'].includes(m.mediaType))?.mediaType;
   if(!['image','video'].includes(type)||!files.some(m=>m.mediaType===type))return null;
