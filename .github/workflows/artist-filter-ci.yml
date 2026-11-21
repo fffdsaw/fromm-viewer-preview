@@ -1,6 +1,9 @@
 name: Verify Preview Artist Filters
 
 on:
+  push:
+    branches:
+      - fix/artist-filter-mixed-media-20261121
   pull_request:
     branches:
       - main
