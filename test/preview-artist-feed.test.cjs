@@ -52,13 +52,21 @@ test('unrelated chat room must never become selected Channel Artist source',()=>
 test('explicit member attribution from selected Channel can identify source safely',()=>{
   const app=mount({room:{host:{id:'unrelated',nick:'다른 채팅방'}}});
   app.window.FrommPreviewArtist.collectMembers=()=>[
-    {id:'member-a',name:'멤버 A'},{id:'member-b',name:'멤버 B'}
+    {id:'member-a',name:'멤버 A',artiId:'arti-a'},{id:'member-b',name:'멤버 B',artiId:'arti-b'}
   ];
   assert.equal(app.window.FrommPreviewArtistFeed.candidate(),null,'multiple artists need explicit member selection');
   app.window.FrommPreviewArtist.state.member='member-b';
   assert.deepEqual(app.window.FrommPreviewArtistFeed.candidate(),{
-    id:'member-b',name:'멤버 B',channel:'group-a'
+    id:'arti-b',name:'멤버 B',channel:'group-a'
   });
+});
+
+test('member ID without explicit artiId never becomes an official feed query',()=>{
+  const app=mount({room:{host:{id:'unrelated'}}});
+  app.window.FrommPreviewArtist.collectMembers=()=>[
+    {id:'member-only',name:'멤버'}
+  ];
+  assert.equal(app.window.FrommPreviewArtistFeed.candidate(),null);
 });
 
 test('source accepts only verified https frommyarti domains',()=>{
