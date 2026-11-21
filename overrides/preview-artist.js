@@ -168,6 +168,7 @@
  window.FrommPreviewArtist=Object.freeze({
    attribution,collectMembers,filterPosts,
    get state(){return {category,member,channel:lastChannel};},
+   syncUI:update,
    choose
  });
 })();
