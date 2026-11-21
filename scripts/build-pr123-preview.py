@@ -158,7 +158,7 @@ for filename in required:
     "indexedDB": "fromm-preview-conversations-v1",
     "containsExperimentalOptics124or125": False,
     "galleryPlayerMode": "copied-current-source-unchanged",
-    "previewArtist": "attributed-channel-image-filter",
+    "previewArtist": "attributed-channel-mixed-media-filter",
     "previewNickname": "hasNick-and-marker-room-scoped",
     "previewArtistFeed": "official-feed-url-discovery-only",
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
