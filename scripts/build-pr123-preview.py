@@ -64,6 +64,13 @@ html = replace_exact(
     '${s.mediaType === "all" ? "미디어" : s.mediaType === "image" ? "사진 게시물" : "업로드된 비디오"} ${posts.length}개',
     '${window.FrommPreviewArtist?.state?.category==="artist" ? "Artist" : s.mediaType === "all" ? "미디어" : s.mediaType === "image" ? "사진 게시물" : "업로드된 비디오"} ${posts.length}개',
     "preview Artist list count label")
+# Ensure every Channel grid re-render updates the retained trigger and
+# member control; the source renderer deliberately reuses the previous toolbar.
+html = replace_exact(
+    html,
+    '  updateSelectedCount();\\n  if (selected?._streamUrl && !s.playerError) {',
+    '  updateSelectedCount();\\n  window.FrommPreviewArtist?.syncUI?.();\\n  if (selected?._streamUrl && !s.playerError) {',
+    "preview Artist UI sync on Channel render")
 html = replace_exact(html, "<title>Fromm Viewer</title>",
                      "<title>Fromm Viewer · 실험용 · Artist</title>", "title")
 charset = '<meta charset="utf-8" />'
