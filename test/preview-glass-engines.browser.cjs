@@ -107,6 +107,11 @@ async function pixels(canvas) {
       });
       const card = page.locator('.save-result-card');
       await page.waitForFunction(()=>document.querySelector('.save-result-card')?.dataset.previewBackdrop==='media');
+      assert.ok(await card.evaluate(el=>{
+        window.dispatchEvent(new Event('scroll'));
+        return !el.querySelector('.preview-webgl-face');
+      }),'the save sheet releases WebGL while scrolling');
+      await page.waitForFunction(()=>document.querySelector('.save-result-card')?.dataset.previewBackdrop==='media');
       await shot(page,`${width}-save-ybouane`);
       await page.evaluate(async () => {
         const img=document.querySelector('#optics-fixture');img.src=img.src.replace('127.0.0.1','localhost');await img.decode();

@@ -4,6 +4,7 @@
 - Settings can switch engines live. Meapri is the default and reads its existing preferences. The ybouane WebGL renderer is pinned to npm 1.0.3 at `2c8ff3d`. The preview uses it for a bounded set of visible optical surfaces. The app keeps the native foreground, morph controls and shared result-sheet lifecycle.
 - The ybouane shader limits distortion and reflections to the bevel. The adapter samples decoded origin-clean media or bounded local paint with no new media fetches, no screen capture and no external proxy. Complex CSS/text backgrounds are approximated at the edge. Protected or unready media, playing video, unsupported WebGL and dedicated rail glyph interactions retain the existing fallback. Hardware GPU use and signed-in service media remain unverified.
 - Local build `python3 scripts/build-pr123-preview.py UPSTREAM_DIR SITE_DIR WORKFLOW_SHA`. Set `PREVIEW_SITE_ROOT=SITE_DIR` to run `node test/artist-preview.browser.cjs` and `node test/preview-glass-engines.browser.cjs`. The Chromium checks cover visibly changed edge pixels, transparent centre, switching, isolated persistence, menu selection, save sheet, unreadable image, forced colors and missing WebGL. Compare deployed `pr123-build.json` to the preview merge SHA and pinned source before claiming rollout.
+- During active scroll, controls and result sheets use their native material. The renderer restores WebGL after scrolling rests and reuses the settings preview frame while its backdrop is stable.
 
 ---
 

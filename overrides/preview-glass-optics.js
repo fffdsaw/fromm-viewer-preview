@@ -33,7 +33,7 @@ const surfaces = new Set();
 const mediaQueries = ['prefers-reduced-motion: reduce', 'prefers-reduced-transparency: reduce', 'forced-colors: active'].map(value => matchMedia(`(${value})`));
 const source = document.createElement('canvas');
 const sample = source.getContext('2d');
-let modulePromise, renderer, rendererModule, failed = false, timer = 0, frame = 0, observer;
+let modulePromise, renderer, rendererModule, failed = false, timer = 0, frame = 0, scrollTimer = 0, observer;
 const active = () => selected.engine === 'ybouane' && !document.hidden && !mediaQueries.some(query => query.matches);
 const announce = () => { for (const listener of subscribers) listener(); };
 
@@ -56,7 +56,7 @@ function refreshSelection() {
   }
   if (!active()) {
     observer?.disconnect();observer = null;
-    clearTimeout(timer);cancelAnimationFrame(frame);timer = frame = 0;
+    clearTimeout(timer);clearTimeout(scrollTimer);cancelAnimationFrame(frame);timer = frame = scrollTimer = 0;
     for (const surface of surfaces) surface.useNative();
     freeRenderer();
   } else schedule();
@@ -71,11 +71,18 @@ export function schedule() {
   }, 45);
 }
 
+function onScroll() {
+  if (!active()) return;
+  if (!scrollTimer) for (const surface of surfaces) if (surface.output && surface.priority !== 3) surface.useNative();
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => { scrollTimer = 0;schedule(); }, 120);
+}
+
 function readySurfaces() {
   const visible = [];
   for (const surface of surfaces) {
     const {element} = surface;
-    if (surface.suspended || !element.isConnected || !element.checkVisibility()) continue;
+    if (surface.suspended || scrollTimer && surface.priority !== 3 || !element.isConnected || !element.checkVisibility()) continue;
     const bounds = element.getBoundingClientRect();
     if (bounds.width > 1 && bounds.height > 1 && bounds.right > 0 && bounds.bottom > 0 && bounds.top < innerHeight && bounds.left < innerWidth) visible.push({surface, bounds});
   }
@@ -85,7 +92,7 @@ function readySurfaces() {
 function paint() {
   if (!active() || failed) return;
   const visible = readySurfaces();
-  if (!visible.length) { freeRenderer(); return; }
+  if (!visible.length) { if (!scrollTimer) freeRenderer();return; }
   if (!rendererModule) {
     if (!modulePromise) modulePromise = Promise.all([import('./vendor/ybouane/GlassRenderer.js'), import('./vendor/ybouane/defaults.js')]).then(([display, defaults]) => {
       rendererModule = {...display, ...defaults};
@@ -121,6 +128,10 @@ function render(surface, bounds) {
   const pad = Math.round(rendererModule.SHADOW_PAD * dpr);
   const width = Math.round(bounds.width * dpr), height = Math.round(bounds.height * dpr);
   if (width * height > 650000) return false;
+  const scene = element.closest('.glass-settings-preview')?.querySelector('[data-preview-glass-scene]');
+  const sceneBox = scene?.getBoundingClientRect();
+  const signature = sceneBox ? [scene.dataset.previewPaint, width, height, Math.round(bounds.left - sceneBox.left), Math.round(bounds.top - sceneBox.top), surface.ramp, ...Object.values(selected.settings)].join(':') : null;
+  if (signature && surface.output?.isConnected && surface.signature === signature) return true;
   source.width = width + pad * 2;source.height = height + pad * 2;
   sample.setTransform(dpr, 0, 0, dpr, 0, 0);
   const type = captureBackdrop(sample, element, {x: bounds.left - pad / dpr, y: bounds.top - pad / dpr}, source.width / dpr, source.height / dpr);
@@ -134,6 +145,7 @@ function render(surface, bounds) {
   renderer.uploadAndBlur(source, 0, 0, source.width, source.height, config.blurAmount);
   renderer.clear();renderer.renderGlassPanel(config, width / dpr, height / dpr, dpr);
   surface.draw(renderer.canvas, pad, width, height, type);
+  surface.signature = signature;
   return true;
 }
 
@@ -190,7 +202,8 @@ export function createPreviewGlass(element, options, makeNative) {
   return new Surface(element, options, makeNative);
 }
 
-for (const event of ['resize', 'scroll', 'load', 'playing', 'pause', 'seeked', 'transitionend', 'animationend', 'fromm-theme-change']) window.addEventListener(event, schedule, {capture: true, passive: true});
+for (const event of ['resize', 'load', 'playing', 'pause', 'seeked', 'transitionend', 'animationend', 'fromm-theme-change']) window.addEventListener(event, schedule, {capture: true, passive: true});
+window.addEventListener('scroll', onScroll, {capture: true, passive: true});
 for (const query of mediaQueries) query.addEventListener('change', refreshSelection);
 document.addEventListener('visibilitychange', refreshSelection);
 window.addEventListener('pageshow', refreshSelection);

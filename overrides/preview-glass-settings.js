@@ -20,6 +20,7 @@ function drawPattern() {
   context.textAlign = 'center';context.textBaseline = 'middle';
   context.font = '20px system-ui';context.fillStyle = theme.getPropertyValue('--theme-text').trim();
   context.fillText('Aa · Fromm · 123', bounds.width / 2, bounds.height / 2);
+  pattern.dataset.previewPaint = String(Number(pattern.dataset.previewPaint || 0) + 1);
   schedule();
 }
 
