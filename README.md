@@ -1,3 +1,11 @@
+# 2026-11-24 · 광학 엔진 비교
+
+실험용 웹의 **설정 → 유리 효과 → 광학 엔진**에서 Meapri Liquid Glass와 ybouane LiquidGlass를 즉시 전환할 수 있습니다. Meapri가 처음 선택되며, ybouane은 별도의 굴절·가장자리 폭·반사광·흐림·색수차 설정을 사용합니다. 설정은 실험용 저장 키에 보관됩니다.
+
+ybouane은 공식 npm 1.0.3의 WebGL 렌더러를 사용합니다. 중앙은 실제 배경을 그대로 비추고 가장자리에서만 굴절합니다. 설정 미리보기, Channel 모핑 메뉴, 공통 저장 결과 패널 및 기존 광학 컨트롤에서 비교할 수 있습니다. 브라우저에서 읽을 수 없는 미디어, 재생 중인 영상, WebGL 미지원 환경 등에서는 기존 Meapri 또는 CSS 표시를 사용합니다. 재생 중인 영상의 WebGL 굴절은 이 실험의 검증 범위에 포함되지 않습니다. [버전·MIT 라이선스](vendor/ybouane/README.md)
+
+---
+
 ## 2026-11-20: Artist 공식 피드 주소 연결 실험
 
 - 최신 Android APK `base.apk` 정적 분석에서 `GET /channels/arti`와 `channelFeedUrl`을 확인함.

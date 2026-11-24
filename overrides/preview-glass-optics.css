@@ -1,0 +1,16 @@
+#glassSettingsDialog .preview-engine-choice{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;font-weight:600}
+#glassSettingsDialog .preview-engine-choice select{max-width:70%;min-height:36px;padding:4px 8px;border:1px solid var(--theme-line);border-radius:8px;color:var(--theme-text);background:var(--theme-card);font:inherit}
+#glassSettingsDialog :is(fieldset,.glass-settings-note,.glass-preview-pattern)[hidden]{display:none}
+#glassSettingsDialog .preview-engine-status{margin:8px 0 0;font-size:12px}
+#glassSettingsDialog .preview-engine-status:empty{display:none}
+#glassSettingsDialog [data-preview-glass-scene]{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.preview-webgl-face{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;border-radius:inherit}
+[data-preview-optics='ybouane']{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root[data-fromm-theme] .viewer-header .fixed-glass-surface[data-preview-optics='ybouane']{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+:root[data-fromm-theme] .fixed-glass-surface[data-preview-optics='ybouane']{background-image:none!important}
+#glassSettingsDialog .glass-preview-lens:is([data-preview-optics='ybouane'],:has([data-preview-optics='ybouane'])){border-color:transparent;box-shadow:none}
+.save-result-card[data-preview-save-glass],.save-result-card[data-preview-optics='ybouane']{position:relative;isolation:isolate;background-color:rgb(255 255 255/.52)!important;border-color:#fff6;box-shadow:0 8px 24px #0003}
+:root[data-fromm-theme='classic'] .save-result-card:is([data-preview-save-glass],[data-preview-optics='ybouane']){background-color:rgb(17 19 23/.60)!important}
+.save-result-card:is([data-preview-save-glass],[data-preview-optics='ybouane']) .save-result-summary{color:var(--theme-text,var(--text))}
+.save-result-card[data-preview-optics='ybouane']{border-color:transparent}
+@media(prefers-reduced-transparency:reduce),(forced-colors:active){.preview-webgl-face{display:none}}

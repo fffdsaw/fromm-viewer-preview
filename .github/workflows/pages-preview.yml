@@ -55,6 +55,8 @@ jobs:
           grep -q 'preview-artist.js?v=' _site/index.html
           grep -q 'preview-artist-posts.js?v=' _site/index.html
           grep -q 'preview-neutral-glass.css?v=' _site/index.html
+          grep -q 'preview-glass-settings.js?v=' _site/index.html
+          test -f _site/vendor/ybouane/LICENSE
           grep -Fq "saturation:100,tint:'rgba(255,255,255,0)'" _site/web-morph-menu.js
           grep -Fq 'window.FrommPreviewArtist.filterPosts(posts)' _site/index.html
           for file in web-glass.js web-morph-menu.js web-clear-controls.js web-channel-photos.js preview-artist.js preview-artist-feed.js preview-artist-posts.js preview-nickname.js preview-artist-banner.js preview-storage.js web-conversation.js web-conversation-core.js web-pwa.js sw.js; do
@@ -105,6 +107,7 @@ jobs:
         run: |
           set -euo pipefail
           PREVIEW_SITE_ROOT="$PWD/_site" node preview/test/artist-preview.browser.cjs
+          PREVIEW_SITE_ROOT="$PWD/_site" node preview/test/preview-glass-engines.browser.cjs
 
       - name: Run operating-source unit regressions against unchanged source
         shell: bash
