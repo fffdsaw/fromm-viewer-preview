@@ -6,6 +6,7 @@ visual overrides. Production remains untouched, as do existing preview DB keys.
 """
 from pathlib import Path
 import json
+import re
 import shutil
 import sys
 
@@ -29,7 +30,8 @@ for pattern in ("index.html", "*.js", "*.css", "*.webmanifest", ".nojekyll"):
         shutil.copy2(source, site / source.name)
 for directory in ("assets", "vendor"):
     shutil.copytree(upstream / directory, site / directory, dirs_exist_ok=True)
-for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js", "preview-nickname.js", "preview-artist-feed.css", "preview-artist-feed.js", "preview-neutral-glass.css", "preview-artist-posts.js", "preview-artist-posts.css"):
+shutil.copytree(preview / "vendor" / "ybouane", site / "vendor" / "ybouane", dirs_exist_ok=True)
+for filename in ("preview-storage.js", "preview-artist-banner.js", "preview-artist.css", "preview-artist.js", "preview-nickname.js", "preview-artist-feed.css", "preview-artist-feed.js", "preview-neutral-glass.css", "preview-artist-posts.js", "preview-artist-posts.css", "preview-glass-optics.js", "preview-glass-backdrop.js", "preview-glass-settings.js", "preview-glass-optics.css"):
     shutil.copy2(preview / "overrides" / filename, site / filename)
 
 def replace_exact(value, old, new, why):
@@ -107,6 +109,16 @@ html = replace_exact(html, "</body>",
 html = replace_exact(html, "</head>",
                      f'<link rel="stylesheet" href="preview-neutral-glass.css?v={version}">\n</head>',
                      "preview-only untinted header and morph glass")
+html = replace_exact(html, "</head>",
+                     f'<link rel="stylesheet" href="preview-glass-optics.css?v={version}">\n</head>',
+                     "preview optical engine styles")
+html = replace_exact(html, "</body>",
+                     f'<script type="module" src="preview-glass-settings.js?v={version}"></script>\n</body>',
+                     "preview optical engine selector")
+html = replace_exact(html, 'save-sheet-enter 260ms cubic-bezier(.2,.75,.25,1) both',
+                     'save-sheet-enter 260ms cubic-bezier(.2,.75,.25,1) backwards',
+                     "release the backdrop root after the save sheet's entrance")
+html = re.sub(r'(web-glass\.js\?v=)[^"\s]+', rf'\g<1>preview-{version}', html)
 html_path.write_text(html, encoding="utf-8")
 
 manifest_path = site / "manifest.webmanifest"
@@ -174,6 +186,25 @@ morph = replace_exact(
     "neutral color on original Meapri filter morph face")
 morph_path.write_text(morph, encoding="utf-8")
 
+# Route optic creation through the preview adapter without changing the copied
+# app's native controls, selection logic, or the pinned source checkout.
+material_path = site / "web-glass-material.js"
+material = material_path.read_text(encoding="utf-8")
+material = replace_exact(
+    material, 'export function createGlass(Engine,element,options){',
+    "import {createPreviewGlass} from './preview-glass-optics.js';\n"
+    "export function createGlass(Engine,element,options){\n"
+    " return createPreviewGlass(element,options,next=>createMeapriGlass(Engine,element,next));\n"
+    "}\nfunction createMeapriGlass(Engine,element,options){", "preview engine adapter")
+material_path.write_text(material, encoding="utf-8")
+for name in ("web-glass.js", "web-glass-controls.js", "web-clear-controls.js", "web-capsule-materialize.js", "web-morph-menu.js", "preview-glass-settings.js"):
+    asset = site / name
+    code = asset.read_text(encoding="utf-8")
+    code = re.sub(r"(web-glass-material\.js\?)(?:v=[^'\s]+|PREVIEW_MATERIAL_VERSION)", rf'\g<1>v=preview-{version}', code)
+    if name == "web-glass.js":
+        code = re.sub(r"((?:web-morph-menu|web-clear-controls|web-glass-controls|web-capsule-materialize)\.js\?v=)[^'\s]+", rf'\g<1>preview-{version}', code)
+    asset.write_text(code, encoding="utf-8")
+
 # Keep source (including new theme/settings/compact-player assets) untouched
 # other than explicit project-path and storage isolation. Never import PR #124/125.
 required = ("index.html", "web-compact-player.js", "compact-player.css",
@@ -201,4 +232,5 @@ for filename in required:
     "previewArtistFeed": "official-feed-url-discovery-only",
     "previewOfficialArtistPosts": "read-only GET /posts first page; GET /posts/{id} detail; live auth unverified",
     "previewNeutralGlass": "header-toggles-and-morph-no-color-tint",
+    "previewOpticalEngines": {"default": "meapri", "ybouane": "1.0.3", "ybouaneCommit": "2c8ff3de131fbd29e34ce389979f8d025a61c1a9"},
 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -5,9 +5,12 @@ on:
       - main
     paths:
       - 'overrides/preview-neutral-glass.css'
+      - 'overrides/preview-glass-*'
+      - 'vendor/ybouane/**'
       - 'scripts/build-pr123-preview.py'
       - 'test/preview-neutral-glass.test.cjs'
       - 'test/artist-preview.browser.cjs'
+      - 'test/preview-glass-engines.browser.cjs'
       - '.github/workflows/neutral-glass-pr.yml'
       - '.github/workflows/pages-preview.yml'
   workflow_dispatch:
@@ -72,3 +75,4 @@ jobs:
         run: |
           set -euo pipefail
           PREVIEW_SITE_ROOT="$PWD/_site" node preview/test/artist-preview.browser.cjs
+          PREVIEW_SITE_ROOT="$PWD/_site" node preview/test/preview-glass-engines.browser.cjs
